@@ -218,26 +218,35 @@ export default function Home() {
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
           {agents.map((agent) => (
-            <div key={agent.id} className="p-6 rounded-3xl bg-slate-900 border border-slate-800 text-center space-y-4">
-              <img
-                src={agent.avatar || 'https://images.unsplash.com/photo-1560250097-0b93528c311a?auto=format&fit=crop&q=80&w=400'}
-                alt={agent.name}
-                className="w-24 h-24 rounded-full object-cover mx-auto border-2 border-amber-400/50"
-              />
-              <div>
-                <h3 className="text-xl font-bold text-white">{agent.name}</h3>
-                <p className="text-xs text-amber-400 font-medium">{agent.agency_name}</p>
+            <Link
+              key={agent.id}
+              to={`/agents/${agent.slug}`}
+              className="p-6 rounded-3xl bg-slate-900 border border-slate-800 text-center space-y-4 shadow-xl hover:border-amber-400/40 hover:-translate-y-1 transition-all cursor-pointer flex flex-col justify-between group"
+            >
+              <div className="space-y-4">
+                <img
+                  src={agent.avatar || 'https://images.unsplash.com/photo-1560250097-0b93528c311a?auto=format&fit=crop&q=80&w=400'}
+                  alt={agent.name}
+                  className="w-24 h-24 rounded-full object-cover mx-auto border-2 border-amber-400/50 shadow-lg group-hover:scale-105 transition-transform"
+                />
+                <div>
+                  <h3 className="text-xl font-bold text-white group-hover:text-amber-400 transition-colors">{agent.name}</h3>
+                  <p className="text-xs text-amber-400 font-semibold uppercase tracking-wider">{agent.agency_name}</p>
+                  <div className="flex items-center justify-center gap-1 text-xs text-slate-400 pt-1">
+                    <Star className="w-3.5 h-3.5 text-amber-400 fill-current" />
+                    <span className="font-bold text-white">{agent.rating}</span>
+                    <span>({agent.experience_years} Yrs Exp)</span>
+                  </div>
+                </div>
+                <p className="text-xs text-slate-400 line-clamp-3 leading-relaxed">{agent.bio}</p>
               </div>
-              <p className="text-xs text-slate-400 line-clamp-3 leading-relaxed">{agent.bio}</p>
+
               <div className="pt-2">
-                <Link
-                  to={`/agents/${agent.slug}`}
-                  className="inline-flex items-center justify-center w-full py-2.5 rounded-xl bg-slate-800 hover:bg-amber-400 hover:text-slate-950 font-bold text-xs transition-all"
-                >
-                  Contact Agent
-                </Link>
+                <span className="w-full py-3 rounded-2xl bg-amber-400 text-slate-950 font-bold text-xs group-hover:bg-amber-300 transition-colors flex items-center justify-center gap-1.5 shadow-md shadow-amber-400/20">
+                  View Profile & Listings <ArrowRight className="w-4 h-4" />
+                </span>
               </div>
-            </div>
+            </Link>
           ))}
         </div>
       </section>
