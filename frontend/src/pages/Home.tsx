@@ -38,7 +38,7 @@ export default function Home() {
   return (
     <div className="space-y-24 pb-20">
       {/* HERO SECTION */}
-      <section className="relative min-h-[90vh] flex items-center justify-center pt-16 pb-20 px-4 sm:px-6 lg:px-8 overflow-hidden">
+      <section className="relative min-h-[85vh] sm:min-h-[90vh] flex items-center justify-center pt-28 sm:pt-36 pb-12 sm:pb-20 px-3 sm:px-6 lg:px-8 overflow-hidden">
         {/* Background Image with Overlay */}
         <div className="absolute inset-0 z-0">
           <img
@@ -49,25 +49,25 @@ export default function Home() {
           <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/60 to-transparent" />
         </div>
 
-        <div className="relative z-10 max-w-5xl w-full mx-auto text-center space-y-8">
-          <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-slate-900/80 border border-amber-400/40 text-amber-300 text-xs font-semibold backdrop-blur-md">
-            <Sparkles className="w-4 h-4 text-amber-400" />
-            <span>UNRIVALED LUXURY REAL ESTATE MARKETPLACE</span>
+        <div className="relative z-10 max-w-5xl w-full mx-auto text-center space-y-4 sm:space-y-8">
+          <div className="inline-flex items-center gap-1.5 sm:gap-2 px-4 py-2 sm:px-5 sm:py-2.5 rounded-full bg-slate-900/90 border border-amber-400/40 text-amber-300 text-[10px] sm:text-xs font-semibold backdrop-blur-md shadow-lg shadow-amber-500/10">
+            <Sparkles className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-amber-400 shrink-0" />
+            <span className="truncate">UNRIVALED LUXURY REAL ESTATE MARKETPLACE</span>
           </div>
 
-          <h1 className="text-4xl sm:text-6xl lg:text-7xl font-extrabold text-white tracking-tight leading-tight">
+          <h1 className="text-3xl sm:text-6xl lg:text-7xl font-extrabold text-white tracking-tight leading-tight">
             Find Your Sanctuary Of <br />
             <span className="text-transparent bg-clip-text bg-gradient-to-r from-amber-300 via-amber-400 to-amber-500">
               Extraordinary Living
             </span>
           </h1>
 
-          <p className="text-base sm:text-xl text-slate-300 max-w-2xl mx-auto font-light leading-relaxed">
+          <p className="text-xs sm:text-xl text-slate-300 max-w-2xl mx-auto font-light leading-relaxed px-2">
             Discover architectural masterworks, sky penthouses, private beach villas, and high-yield commercial estates across India's finest addresses.
           </p>
 
           {/* Hero Search Widget */}
-          <div className="pt-4 w-full">
+          <div className="pt-2 sm:pt-4 w-full">
             <HeroSearch locations={locations} propertyTypes={propertyTypes} />
           </div>
         </div>
@@ -323,24 +323,24 @@ export default function Home() {
 
       {/* CTA BANNER */}
       <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="rounded-3xl bg-gradient-to-r from-amber-500 via-amber-400 to-amber-500 p-8 sm:p-14 text-slate-950 flex flex-col md:flex-row items-center justify-between gap-8 shadow-2xl">
-          <div className="space-y-2 max-w-xl">
-            <h2 className="text-3xl sm:text-4xl font-extrabold tracking-tight">Ready To Find Your Dream Residence?</h2>
-            <p className="text-slate-900 text-sm sm:text-base font-medium">
+        <div className="rounded-3xl bg-gradient-to-r from-amber-500 via-amber-400 to-amber-500 p-6 sm:p-14 text-slate-950 flex flex-col md:flex-row items-center justify-between gap-6 sm:gap-8 shadow-2xl">
+          <div className="space-y-2 max-w-xl text-center md:text-left">
+            <h2 className="text-2xl sm:text-4xl font-extrabold tracking-tight">Ready To Find Your Dream Residence?</h2>
+            <p className="text-slate-900 text-xs sm:text-base font-medium">
               Consult with our senior advisors for private off-market penthouses, villas, and investment opportunities.
             </p>
           </div>
 
-          <div className="flex gap-4 shrink-0">
+          <div className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto shrink-0">
             <Link
               to="/properties"
-              className="px-6 py-3.5 rounded-2xl bg-slate-950 text-white font-bold text-sm hover:bg-slate-900 transition-colors shadow-xl"
+              className="px-6 py-3.5 rounded-2xl bg-slate-950 text-white font-bold text-xs sm:text-sm hover:bg-slate-900 transition-colors shadow-xl text-center"
             >
               Browse Properties
             </Link>
             <Link
               to="/contact"
-              className="px-6 py-3.5 rounded-2xl bg-slate-900/20 text-slate-950 border border-slate-950/30 font-bold text-sm hover:bg-slate-900/30 transition-colors"
+              className="px-6 py-3.5 rounded-2xl bg-slate-900/20 text-slate-950 border border-slate-950/30 font-bold text-xs sm:text-sm hover:bg-slate-900/30 transition-colors text-center"
             >
               Contact Concierge
             </Link>
