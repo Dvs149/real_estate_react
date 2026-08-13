@@ -59,7 +59,7 @@ export default function Login() {
   return (
     <div className="min-h-[80vh] flex items-center justify-center px-4 sm:px-6 lg:px-8 pt-28 pb-12">
       <div className="w-full max-w-md bg-slate-900 border border-slate-800 rounded-3xl p-8 shadow-2xl space-y-6">
-        <div className="text-center space-y-2">
+        <div className="text-center space-y-2"> 
           <div className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-amber-500 to-amber-300 flex items-center justify-center mx-auto shadow-lg shadow-amber-500/20">
             <Building2 className="w-7 h-7 text-slate-950 stroke-[2.5]" />
           </div>
