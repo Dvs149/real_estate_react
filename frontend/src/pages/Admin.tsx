@@ -673,7 +673,7 @@ export default function Admin() {
                 <div>
                   <h2 className="text-xl font-bold text-white flex items-center gap-2">
                     <Users className="w-5 h-5 text-emerald-400" />
-                    User & Role Management
+                    User & Role Management Page
                   </h2>
                   <p className="text-xs text-slate-400">Create new user accounts, edit details, assign roles (Admin, Agent, Buyer), or remove accounts.</p>
                 </div>
