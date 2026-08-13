@@ -30,6 +30,14 @@ export default defineConfig({
   },
   build: {
     outDir: '../public',
-    emptyOutDir: false,
+    emptyOutDir: true,
+    cssCodeSplit: false,
+    rollupOptions: {
+      output: {
+        entryFileNames: 'assets/index.js',
+        chunkFileNames: 'assets/[name].js',
+        assetFileNames: 'assets/[name][extname]',
+      },
+    },
   },
 });

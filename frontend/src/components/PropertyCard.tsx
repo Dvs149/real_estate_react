@@ -16,6 +16,14 @@ export default function PropertyCard({ property, onFavoriteToggle }: PropertyCar
   const [isFavorite, setIsFavorite] = useState<boolean>(!!property.is_favorite);
   const [favLoading, setFavLoading] = useState<boolean>(false);
 
+  const handleCardClick = (e: React.MouseEvent) => {
+    // If click came from interactive elements like favorite button, don't navigate
+    if ((e.target as HTMLElement).closest('button')) {
+      return;
+    }
+    navigate(`/properties/${property.slug}`);
+  };
+
   const handleFavoriteClick = async (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
@@ -45,7 +53,10 @@ export default function PropertyCard({ property, onFavoriteToggle }: PropertyCar
     'https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?auto=format&fit=crop&q=80&w=800';
 
   return (
-    <div className="group rounded-3xl bg-slate-900/80 border border-slate-800/80 hover:border-amber-400/40 overflow-hidden shadow-xl hover:shadow-2xl hover:shadow-amber-500/5 transition-all duration-300 flex flex-col h-full">
+    <div
+      onClick={handleCardClick}
+      className="group rounded-3xl bg-slate-900/80 border border-slate-800/80 hover:border-amber-400/40 overflow-hidden shadow-xl hover:shadow-2xl hover:shadow-amber-500/5 transition-all duration-300 flex flex-col h-full cursor-pointer"
+    >
       {/* Image Container */}
       <div className="relative aspect-[4/3] w-full overflow-hidden bg-slate-950">
         <img
@@ -80,7 +91,7 @@ export default function PropertyCard({ property, onFavoriteToggle }: PropertyCar
           <button
             onClick={handleFavoriteClick}
             disabled={favLoading}
-            className={`pointer-events-auto p-2.5 rounded-full backdrop-blur-md border transition-all ${
+            className={`pointer-events-auto p-2.5 rounded-full backdrop-blur-md border transition-all cursor-pointer ${
               isFavorite
                 ? 'bg-rose-500 text-white border-rose-400 shadow-lg shadow-rose-500/30'
                 : 'bg-slate-900/70 text-slate-300 hover:text-white border-slate-700/80 hover:bg-slate-900'
@@ -103,9 +114,9 @@ export default function PropertyCard({ property, onFavoriteToggle }: PropertyCar
         <div>
           {/* Price & Location */}
           <div className="flex items-baseline justify-between mb-1.5">
-            <div className="text-xl font-bold text-amber-400 font-mono tracking-tight">
+            <div className="text-xl font-bold text-amber-400 font-mono tracking-tight whitespace-nowrap">
               {property.formatted_price}
-              {property.purpose === 'rent' && <span className="text-xs text-slate-400 font-normal"> / mo</span>}
+              {property.purpose === 'rent' && <span className="text-xs text-slate-400 font-normal whitespace-nowrap"> / mo</span>}
             </div>
             <span className="text-xs text-slate-400 flex items-center gap-1">
               <MapPin className="w-3.5 h-3.5 text-amber-400/80 shrink-0" />
@@ -114,11 +125,9 @@ export default function PropertyCard({ property, onFavoriteToggle }: PropertyCar
           </div>
 
           {/* Title */}
-          <Link to={`/properties/${property.slug}`} className="group-hover:text-amber-300 transition-colors">
-            <h3 className="text-base font-semibold text-white line-clamp-1 mb-1 leading-snug">
-              {property.title}
-            </h3>
-          </Link>
+          <h3 className="text-base font-semibold text-white group-hover:text-amber-300 transition-colors line-clamp-1 mb-1 leading-snug">
+            {property.title}
+          </h3>
 
           <p className="text-xs text-slate-400 line-clamp-1 mb-4">
             {property.address}
@@ -152,12 +161,9 @@ export default function PropertyCard({ property, onFavoriteToggle }: PropertyCar
               <span className="text-xs text-slate-400 max-w-[120px] truncate">{property.agent?.name}</span>
             </div>
 
-            <Link
-              to={`/properties/${property.slug}`}
-              className="text-xs font-semibold text-amber-400 hover:text-amber-300 flex items-center gap-1"
-            >
+            <span className="text-xs font-semibold text-amber-400 group-hover:text-amber-300 flex items-center gap-1">
               View Listing →
-            </Link>
+            </span>
           </div>
         </div>
       </div>

@@ -102,12 +102,12 @@ export default function PropertyDetail() {
           </p>
         </div>
 
-        <div className="flex flex-col sm:flex-row sm:items-center gap-4">
-          <div className="text-right">
+        <div className="flex flex-col sm:flex-row sm:items-center gap-4 shrink-0">
+          <div className="text-left sm:text-right shrink-0">
             <span className="text-xs text-slate-400 block font-medium">Guide Price</span>
-            <span className="text-3xl font-extrabold text-amber-400 font-mono tracking-tight">
+            <span className="text-3xl font-extrabold text-amber-400 font-mono tracking-tight whitespace-nowrap">
               {property.formatted_price}
-              {property.purpose === 'rent' && <span className="text-sm font-normal text-slate-400"> / mo</span>}
+              {property.purpose === 'rent' && <span className="text-sm font-normal text-slate-400 whitespace-nowrap"> / mo</span>}
             </span>
           </div>
 
