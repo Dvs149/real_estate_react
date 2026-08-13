@@ -49,7 +49,7 @@ export default function Home() {
           <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/60 to-transparent" />
         </div>
 
-        <div className="relative z-10 max-w-5xl mx-auto text-center space-y-8">
+        <div className="relative z-10 max-w-5xl w-full mx-auto text-center space-y-8">
           <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-slate-900/80 border border-amber-400/40 text-amber-300 text-xs font-semibold backdrop-blur-md">
             <Sparkles className="w-4 h-4 text-amber-400" />
             <span>UNRIVALED LUXURY REAL ESTATE MARKETPLACE</span>
@@ -67,7 +67,7 @@ export default function Home() {
           </p>
 
           {/* Hero Search Widget */}
-          <div className="pt-4">
+          <div className="pt-4 w-full">
             <HeroSearch locations={locations} propertyTypes={propertyTypes} />
           </div>
         </div>

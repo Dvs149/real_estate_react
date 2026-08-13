@@ -100,12 +100,12 @@ export default function FilterSidebar({
       </div>
 
       {/* City / Location Dropdown */}
-      <div>
+      <div className="min-w-0 w-full">
         <label className="text-xs font-semibold text-slate-300 block mb-2">City / Location</label>
         <select
           value={filters.location}
           onChange={(e) => handleInputChange('location', e.target.value)}
-          className="w-full px-3.5 py-2.5 rounded-xl bg-slate-950 border border-slate-800 text-white text-xs focus:outline-none focus:border-amber-400 cursor-pointer"
+          className="w-full min-w-0 px-3.5 py-2.5 rounded-xl bg-slate-950 border border-slate-800 text-white text-xs focus:outline-none focus:border-amber-400 cursor-pointer truncate"
         >
           <option value="">All Cities & Regions</option>
           {locations.map((loc) => (
@@ -117,12 +117,12 @@ export default function FilterSidebar({
       </div>
 
       {/* Property Type */}
-      <div>
+      <div className="min-w-0 w-full">
         <label className="text-xs font-semibold text-slate-300 block mb-2">Property Type</label>
         <select
           value={filters.type}
           onChange={(e) => handleInputChange('type', e.target.value)}
-          className="w-full px-3.5 py-2.5 rounded-xl bg-slate-950 border border-slate-800 text-white text-xs focus:outline-none focus:border-amber-400 cursor-pointer"
+          className="w-full min-w-0 px-3.5 py-2.5 rounded-xl bg-slate-950 border border-slate-800 text-white text-xs focus:outline-none focus:border-amber-400 cursor-pointer truncate"
         >
           <option value="">All Property Types</option>
           {propertyTypes.map((t) => (

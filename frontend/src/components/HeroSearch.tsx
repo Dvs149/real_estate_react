@@ -57,13 +57,13 @@ export default function HeroSearch({ locations: initialLocations = [], propertyT
   };
 
   return (
-    <div className="w-full max-w-5xl mx-auto bg-slate-900/90 backdrop-blur-xl p-4 sm:p-6 rounded-3xl border border-slate-700/60 shadow-2xl shadow-black/80">
+    <div className="w-full max-w-5xl mx-auto self-stretch bg-slate-900/90 backdrop-blur-xl p-4 sm:p-6 rounded-3xl border border-slate-700/60 shadow-2xl shadow-black/80 box-border overflow-hidden">
       {/* Purpose Tabs */}
       <div className="flex items-center gap-2 mb-4 pb-4 border-b border-slate-800">
         <button
           type="button"
           onClick={() => setPurpose('buy')}
-          className={`relative px-6 py-2.5 rounded-full text-sm font-bold transition-colors z-10 ${
+          className={`relative px-6 py-2.5 rounded-full text-sm font-bold transition-colors z-10 cursor-pointer ${
             purpose === 'buy' ? 'text-slate-950 font-extrabold' : 'text-slate-400 hover:text-white hover:bg-slate-800/40'
           }`}
         >
@@ -79,7 +79,7 @@ export default function HeroSearch({ locations: initialLocations = [], propertyT
         <button
           type="button"
           onClick={() => setPurpose('rent')}
-          className={`relative px-6 py-2.5 rounded-full text-sm font-bold transition-colors z-10 ${
+          className={`relative px-6 py-2.5 rounded-full text-sm font-bold transition-colors z-10 cursor-pointer ${
             purpose === 'rent' ? 'text-slate-950 font-extrabold' : 'text-slate-400 hover:text-white hover:bg-slate-800/40'
           }`}
         >
@@ -95,16 +95,16 @@ export default function HeroSearch({ locations: initialLocations = [], propertyT
       </div>
 
       {/* Inputs Form */}
-      <form onSubmit={handleSearch} className="grid grid-cols-1 md:grid-cols-4 gap-3">
+      <form onSubmit={handleSearch} className="grid grid-cols-1 md:grid-cols-[repeat(4,minmax(0,1fr))] gap-3 w-full">
         {/* Location Dropdown */}
-        <div className="bg-slate-950/70 border border-slate-800 rounded-2xl p-3 flex flex-col justify-center focus-within:border-amber-400 transition-colors">
-          <label className="text-[10px] font-bold text-amber-400/90 uppercase tracking-wider mb-0.5 flex items-center gap-1">
-            <MapPin className="w-3 h-3" /> Location
+        <div className="min-w-0 w-full bg-slate-950/70 border border-slate-800 rounded-2xl p-3 flex flex-col justify-center focus-within:border-amber-400 transition-colors">
+          <label className="text-[10px] font-bold text-amber-400/90 uppercase tracking-wider mb-0.5 flex items-center gap-1 shrink-0">
+            <MapPin className="w-3 h-3 shrink-0" /> Location
           </label>
           <select
             value={location}
             onChange={(e) => setLocation(e.target.value)}
-            className="bg-transparent text-white text-sm focus:outline-none cursor-pointer"
+            className="w-full min-w-0 bg-transparent text-white text-sm focus:outline-none cursor-pointer truncate"
           >
             <option value="" className="bg-slate-900 text-slate-300">All Locations</option>
             {locations.map((loc) => (
@@ -116,14 +116,14 @@ export default function HeroSearch({ locations: initialLocations = [], propertyT
         </div>
 
         {/* Property Type Dropdown */}
-        <div className="bg-slate-950/70 border border-slate-800 rounded-2xl p-3 flex flex-col justify-center focus-within:border-amber-400 transition-colors">
-          <label className="text-[10px] font-bold text-amber-400/90 uppercase tracking-wider mb-0.5 flex items-center gap-1">
-            <Home className="w-3 h-3" /> Property Type
+        <div className="min-w-0 w-full bg-slate-950/70 border border-slate-800 rounded-2xl p-3 flex flex-col justify-center focus-within:border-amber-400 transition-colors">
+          <label className="text-[10px] font-bold text-amber-400/90 uppercase tracking-wider mb-0.5 flex items-center gap-1 shrink-0">
+            <Home className="w-3 h-3 shrink-0" /> Property Type
           </label>
           <select
             value={type}
             onChange={(e) => setType(e.target.value)}
-            className="bg-transparent text-white text-sm focus:outline-none cursor-pointer"
+            className="w-full min-w-0 bg-transparent text-white text-sm focus:outline-none cursor-pointer truncate"
           >
             <option value="" className="bg-slate-900 text-slate-300">All Property Types</option>
             {propertyTypes.map((t) => (
@@ -135,14 +135,14 @@ export default function HeroSearch({ locations: initialLocations = [], propertyT
         </div>
 
         {/* Price Range Dropdown */}
-        <div className="bg-slate-950/70 border border-slate-800 rounded-2xl p-3 flex flex-col justify-center focus-within:border-amber-400 transition-colors">
-          <label className="text-[10px] font-bold text-amber-400/90 uppercase tracking-wider mb-0.5 flex items-center gap-1">
-            <DollarSign className="w-3 h-3" /> Budget Range
+        <div className="min-w-0 w-full bg-slate-950/70 border border-slate-800 rounded-2xl p-3 flex flex-col justify-center focus-within:border-amber-400 transition-colors">
+          <label className="text-[10px] font-bold text-amber-400/90 uppercase tracking-wider mb-0.5 flex items-center gap-1 shrink-0">
+            <DollarSign className="w-3 h-3 shrink-0" /> Budget Range
           </label>
           <select
             value={priceRange}
             onChange={(e) => setPriceRange(e.target.value)}
-            className="bg-transparent text-white text-sm focus:outline-none cursor-pointer"
+            className="w-full min-w-0 bg-transparent text-white text-sm focus:outline-none cursor-pointer truncate"
           >
             <option value="" className="bg-slate-900 text-slate-300">Any Budget</option>
             <option value="under_2cr" className="bg-slate-900 text-white">Under ₹2 Cr</option>
@@ -152,13 +152,15 @@ export default function HeroSearch({ locations: initialLocations = [], propertyT
         </div>
 
         {/* Submit Search Button */}
-        <button
-          type="submit"
-          className="w-full h-full min-h-[52px] rounded-2xl bg-gradient-to-r from-amber-500 to-amber-400 hover:from-amber-400 hover:to-amber-300 text-slate-950 font-bold text-base flex items-center justify-center gap-2 shadow-lg shadow-amber-500/25 transition-all hover:scale-[1.02]"
-        >
-          <Search className="w-5 h-5 stroke-[2.5]" />
-          <span>FIND HOMES</span>
-        </button>
+        <div className="min-w-0 w-full">
+          <button
+            type="submit"
+            className="w-full h-full min-h-[52px] rounded-2xl bg-gradient-to-r from-amber-500 to-amber-400 hover:from-amber-400 hover:to-amber-300 text-slate-950 font-bold text-base flex items-center justify-center gap-2 shadow-lg shadow-amber-500/25 transition-all hover:scale-[1.02] cursor-pointer"
+          >
+            <Search className="w-5 h-5 stroke-[2.5] shrink-0" />
+            <span>FIND HOMES</span>
+          </button>
+        </div>
       </form>
     </div>
   );
