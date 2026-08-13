@@ -1,8 +1,10 @@
 import React, { useEffect, useState } from 'react';
-import { MapPin, Phone, Mail, Clock, Send, CheckCircle2 } from 'lucide-react';
+import { MapPin, Phone, Mail, Clock, Send, CheckCircle2, Loader2 } from 'lucide-react';
 import { submitEnquiry, getSettings, SiteSettings } from '../services/api';
+import { useAuth } from '../hooks/useAuth';
 
 export default function Contact() {
+  const { user } = useAuth();
   const [settings, setSettings] = useState<SiteSettings>({
     site_address: 'Sindhu Bhavan Road, Bodakdev, Ahmedabad, Gujarat 380054',
     site_phone: '+91 98765 43210 / +91 79 4000 8888',
@@ -16,6 +18,14 @@ export default function Contact() {
   const [message, setMessage] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [success, setSuccess] = useState(false);
+
+  useEffect(() => {
+    if (user) {
+      if (user.name) setName(user.name);
+      if (user.email) setEmail(user.email);
+      if (user.phone) setPhone(user.phone);
+    }
+  }, [user]);
 
   useEffect(() => {
     getSettings()
@@ -47,6 +57,11 @@ export default function Contact() {
     }
   };
 
+  const handleResetForm = () => {
+    setSuccess(false);
+    setMessage('');
+  };
+
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-28 pb-12 space-y-12">
       <div className="text-center max-w-2xl mx-auto space-y-3">
@@ -63,55 +78,64 @@ export default function Contact() {
           <h2 className="text-2xl font-bold text-white">Send Us A Message</h2>
 
           {success ? (
-            <div className="text-center py-8 space-y-3">
+            <div className="text-center py-8 space-y-4">
               <div className="w-14 h-14 rounded-full bg-emerald-500/20 text-emerald-400 flex items-center justify-center mx-auto">
                 <CheckCircle2 className="w-8 h-8" />
               </div>
-              <h3 className="text-xl font-bold text-white">Message Transmitted</h3>
-              <p className="text-xs text-slate-400">Thank you {name}. Our executive concierge will reach out shortly.</p>
+              <h3 className="text-xl font-bold text-white">Message Transmitted Successfully</h3>
+              <p className="text-xs text-slate-400 max-w-xs mx-auto">
+                Thank you {name}. Our executive concierge team will review your inquiry and reach out shortly.
+              </p>
+              <button
+                type="button"
+                onClick={handleResetForm}
+                className="px-6 py-2.5 rounded-xl bg-amber-400 text-slate-950 font-bold text-xs hover:bg-amber-300 transition-colors cursor-pointer"
+              >
+                Send Another Message
+              </button>
             </div>
           ) : (
             <form onSubmit={handleSubmit} className="space-y-4">
               <div>
-                <label className="text-xs font-semibold text-slate-300 block mb-1">Full Name</label>
+                <label className="text-xs font-semibold text-slate-300 block mb-1">Full Name *</label>
                 <input
                   type="text"
                   required
                   value={name}
                   onChange={(e) => setName(e.target.value)}
-                  placeholder="Divyesh Lunagariya"
+                  placeholder="Enter your full name"
                   className="w-full px-4 py-2.5 rounded-xl bg-slate-950 border border-slate-800 text-white text-sm focus:outline-none focus:border-amber-400"
                 />
               </div>
 
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
-                  <label className="text-xs font-semibold text-slate-300 block mb-1">Email</label>
+                  <label className="text-xs font-semibold text-slate-300 block mb-1">Email Address *</label>
                   <input
                     type="email"
                     required
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
-                    placeholder="divyesh@example.com"
+                    placeholder="name@example.com"
                     className="w-full px-4 py-2.5 rounded-xl bg-slate-950 border border-slate-800 text-white text-sm focus:outline-none focus:border-amber-400"
                   />
                 </div>
 
                 <div>
-                  <label className="text-xs font-semibold text-slate-300 block mb-1">Phone</label>
+                  <label className="text-xs font-semibold text-slate-300 block mb-1">Phone Number *</label>
                   <input
                     type="tel"
                     required
                     value={phone}
                     onChange={(e) => setPhone(e.target.value)}
-                    placeholder="+91 98765 43210"
+                    placeholder="+91 98765 00000"
                     className="w-full px-4 py-2.5 rounded-xl bg-slate-950 border border-slate-800 text-white text-sm focus:outline-none focus:border-amber-400"
                   />
                 </div>
               </div>
 
               <div>
-                <label className="text-xs font-semibold text-slate-300 block mb-1">Message</label>
+                <label className="text-xs font-semibold text-slate-300 block mb-1">Message *</label>
                 <textarea
                   rows={4}
                   required
@@ -127,8 +151,17 @@ export default function Contact() {
                 disabled={submitting}
                 className="w-full py-3.5 rounded-2xl bg-amber-400 text-slate-950 font-bold text-sm hover:bg-amber-300 transition-colors flex items-center justify-center gap-2 shadow-lg shadow-amber-400/20 cursor-pointer"
               >
-                <Send className="w-4 h-4" />
-                {submitting ? 'Sending...' : 'Transmit Message'}
+                {submitting ? (
+                  <>
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                    <span>Transmitting Message...</span>
+                  </>
+                ) : (
+                  <>
+                    <Send className="w-4 h-4" />
+                    <span>Transmit Message</span>
+                  </>
+                )}
               </button>
             </form>
           )}
