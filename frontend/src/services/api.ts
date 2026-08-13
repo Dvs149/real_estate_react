@@ -21,12 +21,40 @@ export async function fetchApi<T>(endpoint: string, options: RequestInit = {}): 
       headers,
     });
 
-    if (!res.ok) {
-      const errorData = await res.json().catch(() => ({}));
-      throw new Error(errorData.message || `Request failed with status ${res.status}`);
+    const text = await res.text();
+    let data: any = null;
+
+    if (text && text.trim()) {
+      try {
+        data = JSON.parse(text);
+      } catch {
+        // Extract JSON payload if PHP warning or HTML tags prepended
+        const jsonMatch = text.match(/\{[\s\S]*\}|\[[\s\S]*\]/);
+        if (jsonMatch) {
+          try {
+            data = JSON.parse(jsonMatch[0]);
+          } catch {}
+        }
+      }
     }
 
-    return res.json();
+    if (!res.ok) {
+      const errorMessage =
+        data?.message ||
+        data?.error ||
+        (text && !text.startsWith('<') ? text : null) ||
+        `Request failed with status ${res.status}`;
+      throw new Error(errorMessage);
+    }
+
+    if (data === null) {
+      if (text.startsWith('<')) {
+        throw new Error('Server returned HTML response instead of JSON');
+      }
+      throw new Error('Invalid JSON response from server');
+    }
+
+    return data as T;
   } catch (err: any) {
     throw err;
   }

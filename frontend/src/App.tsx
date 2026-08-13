@@ -80,6 +80,7 @@ export default function App() {
               <Route path="/register" element={<Register />} />
               <Route path="/dashboard" element={<Dashboard />} />
               <Route path="/admin" element={<Admin />} />
+              <Route path="/admin/:tab" element={<Admin />} />
             </Routes>
           </main>
           <InactivityBanner />

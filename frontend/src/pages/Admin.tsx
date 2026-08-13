@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useParams, useSearchParams, Link } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
 import {
   getAdminStats,
@@ -39,7 +39,22 @@ import {
 
 export default function Admin() {
   const navigate = useNavigate();
+  const { tab: pathTab } = useParams();
+  const [searchParams] = useSearchParams();
   const { user, loading: authLoading } = useAuth();
+
+  const getActiveTab = (): 'overview' | 'properties' | 'locations' | 'leads' | 'users' => {
+    if (pathTab && ['overview', 'properties', 'locations', 'leads', 'users'].includes(pathTab)) {
+      return pathTab as any;
+    }
+    const queryTab = searchParams.get('tab');
+    if (queryTab && ['overview', 'properties', 'locations', 'leads', 'users'].includes(queryTab)) {
+      return queryTab as any;
+    }
+    return 'overview';
+  };
+
+  const activeTab = getActiveTab();
 
   const [stats, setStats] = useState<any>(null);
   const [properties, setProperties] = useState<Property[]>([]);
@@ -48,7 +63,6 @@ export default function Admin() {
   const [enquiries, setEnquiries] = useState<Enquiry[]>([]);
   const [appointments, setAppointments] = useState<Appointment[]>([]);
 
-  const [activeTab, setActiveTab] = useState<'overview' | 'properties' | 'locations' | 'leads' | 'users'>('overview');
   const [loading, setLoading] = useState<boolean>(true);
 
   // Location Modal State
@@ -294,11 +308,11 @@ export default function Admin() {
   }
 
   const navMenuItems = [
-    { id: 'overview', label: 'Overview', icon: LayoutDashboard, badge: null },
-    { id: 'properties', label: 'Properties Catalog', icon: Building2, badge: properties.length },
-    { id: 'locations', label: 'Metro Locations', icon: MapPin, badge: locationsList.length },
-    { id: 'leads', label: 'Customer Leads', icon: FileText, badge: enquiries.length },
-    { id: 'users', label: 'Users & Roles', icon: Users, badge: usersList.length },
+    { id: 'overview', label: 'Overview', icon: LayoutDashboard, badge: null, path: '/admin/overview' },
+    { id: 'properties', label: 'Properties Catalog', icon: Building2, badge: properties.length, path: '/admin/properties' },
+    { id: 'locations', label: 'Metro Locations', icon: MapPin, badge: locationsList.length, path: '/admin/locations' },
+    { id: 'leads', label: 'Customer Leads', icon: FileText, badge: enquiries.length, path: '/admin/leads' },
+    { id: 'users', label: 'Users & Roles', icon: Users, badge: usersList.length, path: '/admin/users' },
   ];
 
   return (
@@ -323,9 +337,9 @@ export default function Admin() {
               const Icon = item.icon;
               const active = activeTab === item.id;
               return (
-                <button
+                <Link
                   key={item.id}
-                  onClick={() => setActiveTab(item.id as any)}
+                  to={item.path}
                   className={`w-full flex items-center justify-between px-4 py-3 rounded-2xl text-xs font-bold transition-all duration-200 cursor-pointer ${
                     active
                       ? 'bg-gradient-to-r from-emerald-500 to-emerald-400 text-slate-950 shadow-lg shadow-emerald-500/20 translate-x-1'
@@ -345,7 +359,7 @@ export default function Admin() {
                       {item.badge}
                     </span>
                   )}
-                </button>
+                </Link>
               );
             })}
           </nav>
@@ -673,7 +687,7 @@ export default function Admin() {
                 <div>
                   <h2 className="text-xl font-bold text-white flex items-center gap-2">
                     <Users className="w-5 h-5 text-emerald-400" />
-                    User & Role Management Page
+                    User & Role Management
                   </h2>
                   <p className="text-xs text-slate-400">Create new user accounts, edit details, assign roles (Admin, Agent, Buyer), or remove accounts.</p>
                 </div>
