@@ -64,7 +64,7 @@ export default function Login() {
             <Building2 className="w-7 h-7 text-slate-950 stroke-[2.5]" />
           </div>
           <h1 className="text-2xl font-bold text-white">
-            Sign In To DVS Realt
+            Sign Up To DVS Realt
             <span
               onClick={() => setShowDemo(!showDemo)}
               className="cursor-pointer select-none"
