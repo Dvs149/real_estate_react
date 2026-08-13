@@ -15,6 +15,8 @@ use App\Http\Controllers\Api\PropertyTypeController;
 use App\Http\Controllers\Api\TestimonialController;
 use Illuminate\Support\Facades\Route;
 
+use App\Http\Controllers\Api\SettingController;
+
 // Public Authentication
 Route::prefix('auth')->group(function () {
     Route::post('/register', [AuthController::class, 'register']);
@@ -41,6 +43,7 @@ Route::get('/agents', [AgentController::class, 'index']);
 Route::get('/agents/{slug}', [AgentController::class, 'show']);
 
 // CMS Public APIs
+Route::get('/settings', [SettingController::class, 'index']);
 Route::get('/blogs', [BlogController::class, 'index']);
 Route::get('/blogs/{slug}', [BlogController::class, 'show']);
 Route::get('/testimonials', [TestimonialController::class, 'index']);
@@ -82,5 +85,6 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::put('/users/{id}', [AdminController::class, 'updateUser']);
         Route::patch('/users/{id}/role', [AdminController::class, 'updateUserRole']);
         Route::delete('/users/{id}', [AdminController::class, 'deleteUser']);
+        Route::post('/settings', [SettingController::class, 'update']);
     });
 });

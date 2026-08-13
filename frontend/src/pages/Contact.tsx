@@ -1,14 +1,38 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { MapPin, Phone, Mail, Clock, Send, CheckCircle2 } from 'lucide-react';
-import { submitEnquiry } from '../services/api';
+import { submitEnquiry, getSettings, SiteSettings } from '../services/api';
 
 export default function Contact() {
+  const [settings, setSettings] = useState<SiteSettings>({
+    site_address: 'Sindhu Bhavan Road, Bodakdev, Ahmedabad, Gujarat 380054',
+    site_phone: '+91 98765 43210 / +91 79 4000 8888',
+    site_email: 'concierge@dvsrealty.com',
+    site_working_hours: 'Mon - Sat: 9:00 AM - 8:00 PM IST',
+  });
+
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [phone, setPhone] = useState('');
   const [message, setMessage] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [success, setSuccess] = useState(false);
+
+  useEffect(() => {
+    getSettings()
+      .then((res) => {
+        if (res) setSettings((prev) => ({ ...prev, ...res }));
+      })
+      .catch(() => {});
+
+    const handleSettingsUpdate = (e: any) => {
+      if (e.detail) {
+        setSettings((prev) => ({ ...prev, ...e.detail }));
+      }
+    };
+
+    window.addEventListener('siteSettingsUpdated', handleSettingsUpdate);
+    return () => window.removeEventListener('siteSettingsUpdated', handleSettingsUpdate);
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -118,24 +142,24 @@ export default function Contact() {
               <div className="flex items-start gap-3">
                 <MapPin className="w-5 h-5 text-amber-400 shrink-0 mt-0.5" />
                 <div>
-                  <span className="font-bold text-white block">DVS Towers, 14th Floor</span>
-                  <span>Sindhu Bhavan Road, Bodakdev, Ahmedabad, Gujarat 380054</span>
+                  <span className="font-bold text-white block">Corporate Headquarters</span>
+                  <span>{settings.site_address}</span>
                 </div>
               </div>
 
               <div className="flex items-center gap-3">
                 <Phone className="w-5 h-5 text-amber-400 shrink-0" />
-                <span>+91 98765 43210 / +91 79 4000 8888</span>
+                <span>{settings.site_phone}</span>
               </div>
 
               <div className="flex items-center gap-3">
                 <Mail className="w-5 h-5 text-amber-400 shrink-0" />
-                <span>concierge@dvsrealty.com</span>
+                <span>{settings.site_email}</span>
               </div>
 
               <div className="flex items-center gap-3">
                 <Clock className="w-5 h-5 text-amber-400 shrink-0" />
-                <span>Monday – Saturday: 09:30 AM – 07:30 PM IST</span>
+                <span>{settings.site_working_hours}</span>
               </div>
             </div>
           </div>

@@ -1,8 +1,33 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Building2, Phone, Mail, MapPin, Send } from 'lucide-react';
+import { getSettings, SiteSettings } from '../services/api';
 
 export default function Footer() {
+  const [settings, setSettings] = useState<SiteSettings>({
+    site_address: 'Sindhu Bhavan Road, Bodakdev, Ahmedabad, Gujarat 380054',
+    site_phone: '+91 98765 43210 / +91 79 4000 8888',
+    site_email: 'concierge@dvsrealty.com',
+    site_working_hours: 'Mon - Sat: 9:00 AM - 8:00 PM IST',
+  });
+
+  useEffect(() => {
+    getSettings()
+      .then((res) => {
+        if (res) setSettings((prev) => ({ ...prev, ...res }));
+      })
+      .catch(() => {});
+
+    const handleSettingsUpdate = (e: any) => {
+      if (e.detail) {
+        setSettings((prev) => ({ ...prev, ...e.detail }));
+      }
+    };
+
+    window.addEventListener('siteSettingsUpdated', handleSettingsUpdate);
+    return () => window.removeEventListener('siteSettingsUpdated', handleSettingsUpdate);
+  }, []);
+
   return (
     <footer className="bg-slate-950 text-slate-400 border-t border-slate-900 pt-16 pb-12">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -28,15 +53,15 @@ export default function Footer() {
             <div className="pt-2 flex flex-col gap-2 text-sm text-slate-300">
               <div className="flex items-center gap-3">
                 <MapPin className="w-4 h-4 text-amber-400 shrink-0" />
-                <span>Sindhu Bhavan Road, Bodakdev, Ahmedabad, Gujarat 380054</span>
+                <span>{settings.site_address}</span>
               </div>
               <div className="flex items-center gap-3">
                 <Phone className="w-4 h-4 text-amber-400 shrink-0" />
-                <span>+91 98765 43210 / +91 79 4000 8888</span>
+                <span>{settings.site_phone}</span>
               </div>
               <div className="flex items-center gap-3">
                 <Mail className="w-4 h-4 text-amber-400 shrink-0" />
-                <span>concierge@dvsrealty.com</span>
+                <span>{settings.site_email}</span>
               </div>
             </div>
           </div>

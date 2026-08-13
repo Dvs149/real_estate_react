@@ -269,3 +269,25 @@ export async function deleteAdminUser(id: number): Promise<{ message: string }> 
   });
 }
 
+export interface SiteSettings {
+  site_address: string;
+  site_phone: string;
+  site_email: string;
+  site_working_hours: string;
+}
+
+export async function getSettings(): Promise<SiteSettings> {
+  return fetchApi<SiteSettings>('/settings');
+}
+
+export async function updateSettings(data: Partial<SiteSettings>): Promise<{ message: string; data: SiteSettings }> {
+  const res = await fetchApi<{ message: string; data: SiteSettings }>('/admin/settings', {
+    method: 'POST',
+    body: JSON.stringify(data),
+  });
+  if (res && res.data && typeof window !== 'undefined') {
+    window.dispatchEvent(new CustomEvent('siteSettingsUpdated', { detail: res.data }));
+  }
+  return res;
+}
+

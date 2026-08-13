@@ -17,6 +17,9 @@ import {
   createLocation,
   updateLocation,
   deleteLocation,
+  getSettings,
+  updateSettings,
+  SiteSettings,
 } from '../services/api';
 import { Property, User, Enquiry, Appointment, Location } from '../types';
 import {
@@ -36,6 +39,8 @@ import {
   LayoutDashboard,
   UserPlus,
   ChevronDown,
+  Settings,
+  CheckCircle2,
 } from 'lucide-react';
 
 export default function Admin() {
@@ -44,12 +49,12 @@ export default function Admin() {
   const [searchParams] = useSearchParams();
   const { user, loading: authLoading } = useAuth();
 
-  const getActiveTab = (): 'overview' | 'properties' | 'locations' | 'leads' | 'users' => {
-    if (pathTab && ['overview', 'properties', 'locations', 'leads', 'users'].includes(pathTab)) {
+  const getActiveTab = (): 'overview' | 'properties' | 'locations' | 'leads' | 'users' | 'settings' => {
+    if (pathTab && ['overview', 'properties', 'locations', 'leads', 'users', 'settings'].includes(pathTab)) {
       return pathTab as any;
     }
     const queryTab = searchParams.get('tab');
-    if (queryTab && ['overview', 'properties', 'locations', 'leads', 'users'].includes(queryTab)) {
+    if (queryTab && ['overview', 'properties', 'locations', 'leads', 'users', 'settings'].includes(queryTab)) {
       return queryTab as any;
     }
     return 'overview';
@@ -63,6 +68,16 @@ export default function Admin() {
   const [usersList, setUsersList] = useState<User[]>([]);
   const [enquiries, setEnquiries] = useState<Enquiry[]>([]);
   const [appointments, setAppointments] = useState<Appointment[]>([]);
+
+  // Site Settings State
+  const [siteSettings, setSiteSettings] = useState<SiteSettings>({
+    site_address: '',
+    site_phone: '',
+    site_email: '',
+    site_working_hours: '',
+  });
+  const [savingSettings, setSavingSettings] = useState<boolean>(false);
+  const [settingsSuccess, setSettingsSuccess] = useState<string>('');
 
   const [loading, setLoading] = useState<boolean>(true);
 
@@ -106,11 +121,12 @@ export default function Admin() {
   const loadAdminData = async () => {
     setLoading(true);
     try {
-      const [statsRes, propsRes, locationsRes, usersRes] = await Promise.all([
+      const [statsRes, propsRes, locationsRes, usersRes, settingsRes] = await Promise.all([
         getAdminStats().catch(() => ({ stats: {}, recent_enquiries: [], recent_appointments: [] })),
         getProperties({ per_page: 50 }).catch(() => ({ data: [] })),
         getLocations().catch(() => ({ data: [] })),
         getAdminUsers().catch(() => ({ data: [] })),
+        getSettings().catch(() => null),
       ]);
 
       setStats(statsRes.stats);
@@ -119,10 +135,28 @@ export default function Admin() {
       setProperties(propsRes.data || []);
       setLocationsList(locationsRes.data || []);
       setUsersList(usersRes.data || []);
+      if (settingsRes) setSiteSettings(settingsRes);
     } catch (err) {
       console.error('Error loading admin dataset:', err);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleSaveSettings = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setSavingSettings(true);
+    setSettingsSuccess('');
+    try {
+      const res = await updateSettings(siteSettings);
+      setSettingsSuccess('Site contact details updated successfully across the web app!');
+      if (res.data) {
+        setSiteSettings(res.data);
+      }
+    } catch (err: any) {
+      alert(err.message || 'Failed to update settings');
+    } finally {
+      setSavingSettings(false);
     }
   };
 
@@ -314,6 +348,7 @@ export default function Admin() {
     { id: 'locations', label: 'Metro Locations', icon: MapPin, badge: locationsList.length, path: '/admin/locations' },
     { id: 'leads', label: 'Customer Leads', icon: FileText, badge: enquiries.length, path: '/admin/leads' },
     { id: 'users', label: 'Users & Roles', icon: Users, badge: usersList.length, path: '/admin/users' },
+    { id: 'settings', label: 'Site & Contact Info', icon: Settings, badge: null, path: '/admin/settings' },
   ];
 
   return (
@@ -779,6 +814,91 @@ export default function Admin() {
                   ))}
                 </tbody>
               </table>
+            </div>
+          )}
+
+          {/* SETTINGS TAB */}
+          {activeTab === 'settings' && (
+            <div className="bg-slate-900 border border-slate-800 rounded-3xl p-6 sm:p-8 space-y-6 shadow-xl max-w-3xl">
+              <div className="border-b border-slate-800 pb-4">
+                <h2 className="text-xl font-bold text-white flex items-center gap-2">
+                  <Settings className="w-5 h-5 text-amber-400" />
+                  Site Contact & Concierge Information
+                </h2>
+                <p className="text-xs text-slate-400">
+                  Updating details here instantly changes office address, phone numbers, and concierge email throughout the entire web application (Footer, Contact page, Concierge banner, etc.).
+                </p>
+              </div>
+
+              {settingsSuccess && (
+                <div className="p-4 rounded-2xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-xs font-semibold flex items-center gap-2">
+                  <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
+                  <span>{settingsSuccess}</span>
+                </div>
+              )}
+
+              <form onSubmit={handleSaveSettings} className="space-y-5">
+                <div className="space-y-1">
+                  <label className="text-xs font-semibold text-slate-300 block">Headquarters Office Address</label>
+                  <input
+                    type="text"
+                    required
+                    value={siteSettings.site_address}
+                    onChange={(e) => setSiteSettings({ ...siteSettings, site_address: e.target.value })}
+                    placeholder="Sindhu Bhavan Road, Bodakdev, Ahmedabad, Gujarat 380054"
+                    className="w-full px-4 py-2.5 rounded-xl bg-slate-950 border border-slate-800 text-white text-xs placeholder:text-slate-600 focus:outline-none focus:border-amber-400"
+                  />
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div className="space-y-1">
+                    <label className="text-xs font-semibold text-slate-300 block">Contact Phone Number(s)</label>
+                    <input
+                      type="text"
+                      required
+                      value={siteSettings.site_phone}
+                      onChange={(e) => setSiteSettings({ ...siteSettings, site_phone: e.target.value })}
+                      placeholder="+91 98765 43210 / +91 79 4000 8888"
+                      className="w-full px-4 py-2.5 rounded-xl bg-slate-950 border border-slate-800 text-white text-xs placeholder:text-slate-600 focus:outline-none focus:border-amber-400"
+                    />
+                  </div>
+
+                  <div className="space-y-1">
+                    <label className="text-xs font-semibold text-slate-300 block">Concierge Email Address</label>
+                    <input
+                      type="email"
+                      required
+                      value={siteSettings.site_email}
+                      onChange={(e) => setSiteSettings({ ...siteSettings, site_email: e.target.value })}
+                      placeholder="concierge@dvsrealty.com"
+                      className="w-full px-4 py-2.5 rounded-xl bg-slate-950 border border-slate-800 text-white text-xs placeholder:text-slate-600 focus:outline-none focus:border-amber-400"
+                    />
+                  </div>
+                </div>
+
+                <div className="space-y-1">
+                  <label className="text-xs font-semibold text-slate-300 block">Office Working Hours</label>
+                  <input
+                    type="text"
+                    required
+                    value={siteSettings.site_working_hours}
+                    onChange={(e) => setSiteSettings({ ...siteSettings, site_working_hours: e.target.value })}
+                    placeholder="Mon - Sat: 9:00 AM - 8:00 PM IST"
+                    className="w-full px-4 py-2.5 rounded-xl bg-slate-950 border border-slate-800 text-white text-xs placeholder:text-slate-600 focus:outline-none focus:border-amber-400"
+                  />
+                </div>
+
+                <div className="pt-4 border-t border-slate-800 flex justify-end">
+                  <button
+                    type="submit"
+                    disabled={savingSettings}
+                    className="px-6 py-3 rounded-2xl bg-amber-400 text-slate-950 font-bold text-xs hover:bg-amber-300 transition-colors shadow-lg shadow-amber-400/20 flex items-center gap-2 cursor-pointer"
+                  >
+                    {savingSettings && <Loader2 className="w-4 h-4 animate-spin" />}
+                    Save Site Settings
+                  </button>
+                </div>
+              </form>
             </div>
           )}
         </main>
