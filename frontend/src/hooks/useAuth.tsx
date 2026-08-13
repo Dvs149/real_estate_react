@@ -1,0 +1,150 @@
+import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
+import { User } from '../types';
+import { fetchApi } from '../services/api';
+
+interface AuthContextType {
+  user: User | null;
+  token: string | null;
+  loading: boolean;
+  inactivityLoggedOut: boolean;
+  dismissInactivityNotice: () => void;
+  login: (token: string, user: User) => void;
+  logout: () => Promise<void>;
+  updateProfile: (data: Partial<User>) => Promise<void>;
+}
+
+const AuthContext = createContext<AuthContextType | undefined>(undefined);
+
+// Inactivity timeout: 15 minutes (in milliseconds)
+const INACTIVITY_TIMEOUT_MS = 15 * 60 * 1000;
+
+export function AuthProvider({ children }: { children: React.ReactNode }) {
+  const [user, setUser] = useState<User | null>(null);
+  const [token, setToken] = useState<string | null>(null);
+  const [loading, setLoading] = useState<boolean>(true);
+  const [inactivityLoggedOut, setInactivityLoggedOut] = useState<boolean>(false);
+
+  useEffect(() => {
+    const storedToken = localStorage.getItem('auth_token');
+    const storedUser = localStorage.getItem('auth_user');
+
+    if (storedToken) {
+      setToken(storedToken);
+      if (storedUser) {
+        try {
+          setUser(JSON.parse(storedUser));
+        } catch (e) {
+          // ignore
+        }
+      }
+
+      // Verify token with backend
+      fetchApi<{ user: User }>('/auth/me')
+        .then((res) => {
+          setUser(res.user);
+          localStorage.setItem('auth_user', JSON.stringify(res.user));
+        })
+        .catch(() => {
+          localStorage.removeItem('auth_token');
+          localStorage.removeItem('auth_user');
+          setToken(null);
+          setUser(null);
+        })
+        .finally(() => setLoading(false));
+    } else {
+      setLoading(false);
+    }
+  }, []);
+
+  const logout = useCallback(async () => {
+    try {
+      await fetchApi('/auth/logout', { method: 'POST' });
+    } catch (e) {
+      // ignore
+    } finally {
+      setToken(null);
+      setUser(null);
+      localStorage.removeItem('auth_token');
+      localStorage.removeItem('auth_user');
+    }
+  }, []);
+
+  // Automatic Inactivity Auto-Logout Mechanism
+  useEffect(() => {
+    if (!user) return;
+
+    let timerId: ReturnType<typeof setTimeout>;
+
+    const handleInactivityLogout = () => {
+      logout();
+      setInactivityLoggedOut(true);
+    };
+
+    const resetTimer = () => {
+      if (timerId) clearTimeout(timerId);
+      timerId = setTimeout(handleInactivityLogout, INACTIVITY_TIMEOUT_MS);
+    };
+
+    const activityEvents = ['mousemove', 'keydown', 'click', 'scroll', 'touchstart'];
+
+    activityEvents.forEach((event) => {
+      window.addEventListener(event, resetTimer, { passive: true });
+    });
+
+    // Start initial timer
+    resetTimer();
+
+    return () => {
+      if (timerId) clearTimeout(timerId);
+      activityEvents.forEach((event) => {
+        window.removeEventListener(event, resetTimer);
+      });
+    };
+  }, [user, logout]);
+
+  const login = (newToken: string, newUser: User) => {
+    setInactivityLoggedOut(false);
+    setToken(newToken);
+    setUser(newUser);
+    localStorage.setItem('auth_token', newToken);
+    localStorage.setItem('auth_user', JSON.stringify(newUser));
+  };
+
+  const updateProfile = async (data: Partial<User>) => {
+    const res = await fetchApi<{ user: User }>('/auth/profile', {
+      method: 'PUT',
+      body: JSON.stringify(data),
+    });
+    setUser(res.user);
+    localStorage.setItem('auth_user', JSON.stringify(res.user));
+  };
+
+  const dismissInactivityNotice = () => {
+    setInactivityLoggedOut(false);
+  };
+
+  return (
+    <AuthContext.Provider
+      value={{
+        user,
+        token,
+        loading,
+        inactivityLoggedOut,
+        dismissInactivityNotice,
+        login,
+        logout,
+        updateProfile,
+      }}
+    >
+      {children}
+    </AuthContext.Provider>
+  );
+}
+
+export function useAuth() {
+  const context = useContext(AuthContext);
+  if (!context) {
+    throw new Error('useAuth must be used within an AuthProvider');
+  }
+  return context;
+}

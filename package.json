@@ -1,0 +1,18 @@
+{
+    "$schema": "https://www.schemastore.org/package.json",
+    "private": true,
+    "type": "module",
+    "scripts": {
+        "dev": "npx concurrently \"php artisan serve --host=127.0.0.1 --port=8000\" \"npm run dev --prefix frontend\"",
+        "dev:backend": "php artisan serve --host=127.0.0.1 --port=8000",
+        "dev:frontend": "npm run dev --prefix frontend",
+        "build": "npm run build --prefix frontend"
+    },
+    "devDependencies": {
+        "@tailwindcss/vite": "^4.0.0",
+        "concurrently": "^9.2.4",
+        "laravel-vite-plugin": "^3.1",
+        "tailwindcss": "^4.0.0",
+        "vite": "^8.0.0"
+    }
+}

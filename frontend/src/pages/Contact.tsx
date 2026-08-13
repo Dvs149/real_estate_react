@@ -1,0 +1,146 @@
+import React, { useState } from 'react';
+import { MapPin, Phone, Mail, Clock, Send, CheckCircle2 } from 'lucide-react';
+import { submitEnquiry } from '../services/api';
+
+export default function Contact() {
+  const [name, setName] = useState('');
+  const [email, setEmail] = useState('');
+  const [phone, setPhone] = useState('');
+  const [message, setMessage] = useState('');
+  const [submitting, setSubmitting] = useState(false);
+  const [success, setSuccess] = useState(false);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setSubmitting(true);
+    try {
+      await submitEnquiry({ name, email, phone, message });
+      setSuccess(true);
+    } catch (err: any) {
+      alert(err.message || 'Failed to send message');
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  return (
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-28 pb-12 space-y-12">
+      <div className="text-center max-w-2xl mx-auto space-y-3">
+        <span className="text-amber-400 text-xs font-bold uppercase tracking-widest">Connect With Concierge</span>
+        <h1 className="text-4xl font-extrabold text-white tracking-tight">Contact DVS Realty</h1>
+        <p className="text-sm text-slate-400">
+          Our senior luxury advisors are available for private consultations, property valuation, or buyer representation.
+        </p>
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-start">
+        {/* Contact Form */}
+        <div className="p-8 rounded-3xl bg-slate-900 border border-slate-800 shadow-2xl space-y-6">
+          <h2 className="text-2xl font-bold text-white">Send Us A Message</h2>
+
+          {success ? (
+            <div className="text-center py-8 space-y-3">
+              <div className="w-14 h-14 rounded-full bg-emerald-500/20 text-emerald-400 flex items-center justify-center mx-auto">
+                <CheckCircle2 className="w-8 h-8" />
+              </div>
+              <h3 className="text-xl font-bold text-white">Message Transmitted</h3>
+              <p className="text-xs text-slate-400">Thank you {name}. Our executive concierge will reach out shortly.</p>
+            </div>
+          ) : (
+            <form onSubmit={handleSubmit} className="space-y-4">
+              <div>
+                <label className="text-xs font-semibold text-slate-300 block mb-1">Full Name</label>
+                <input
+                  type="text"
+                  required
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  placeholder="Divyesh Lunagariya"
+                  className="w-full px-4 py-2.5 rounded-xl bg-slate-950 border border-slate-800 text-white text-sm focus:outline-none focus:border-amber-400"
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="text-xs font-semibold text-slate-300 block mb-1">Email</label>
+                  <input
+                    type="email"
+                    required
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    placeholder="divyesh@example.com"
+                    className="w-full px-4 py-2.5 rounded-xl bg-slate-950 border border-slate-800 text-white text-sm focus:outline-none focus:border-amber-400"
+                  />
+                </div>
+
+                <div>
+                  <label className="text-xs font-semibold text-slate-300 block mb-1">Phone</label>
+                  <input
+                    type="tel"
+                    required
+                    value={phone}
+                    onChange={(e) => setPhone(e.target.value)}
+                    placeholder="+91 98765 43210"
+                    className="w-full px-4 py-2.5 rounded-xl bg-slate-950 border border-slate-800 text-white text-sm focus:outline-none focus:border-amber-400"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="text-xs font-semibold text-slate-300 block mb-1">Message</label>
+                <textarea
+                  rows={4}
+                  required
+                  value={message}
+                  onChange={(e) => setMessage(e.target.value)}
+                  placeholder="How can our luxury real estate team assist you today?"
+                  className="w-full px-4 py-2.5 rounded-xl bg-slate-950 border border-slate-800 text-white text-sm focus:outline-none focus:border-amber-400"
+                />
+              </div>
+
+              <button
+                type="submit"
+                disabled={submitting}
+                className="w-full py-3.5 rounded-2xl bg-amber-400 text-slate-950 font-bold text-sm hover:bg-amber-300 transition-colors flex items-center justify-center gap-2 shadow-lg shadow-amber-400/20 cursor-pointer"
+              >
+                <Send className="w-4 h-4" />
+                {submitting ? 'Sending...' : 'Transmit Message'}
+              </button>
+            </form>
+          )}
+        </div>
+
+        {/* Office Details */}
+        <div className="space-y-8">
+          <div className="p-8 rounded-3xl bg-slate-900 border border-slate-800 space-y-6">
+            <h3 className="text-xl font-bold text-white">Headquarters Office</h3>
+            <div className="space-y-4 text-xs sm:text-sm text-slate-300">
+              <div className="flex items-start gap-3">
+                <MapPin className="w-5 h-5 text-amber-400 shrink-0 mt-0.5" />
+                <div>
+                  <span className="font-bold text-white block">DVS Towers, 14th Floor</span>
+                  <span>Sindhu Bhavan Road, Bodakdev, Ahmedabad, Gujarat 380054</span>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-3">
+                <Phone className="w-5 h-5 text-amber-400 shrink-0" />
+                <span>+91 98765 43210 / +91 79 4000 8888</span>
+              </div>
+
+              <div className="flex items-center gap-3">
+                <Mail className="w-5 h-5 text-amber-400 shrink-0" />
+                <span>concierge@dvsrealty.com</span>
+              </div>
+
+              <div className="flex items-center gap-3">
+                <Clock className="w-5 h-5 text-amber-400 shrink-0" />
+                <span>Monday – Saturday: 09:30 AM – 07:30 PM IST</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
