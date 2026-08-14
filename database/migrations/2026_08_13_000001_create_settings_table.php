@@ -20,7 +20,7 @@ return new class extends Migration
         DB::table('settings')->insert([
             ['key' => 'site_address', 'value' => 'Sindhu Bhavan Road, Bodakdev, Ahmedabad, Gujarat 380054', 'created_at' => now(), 'updated_at' => now()],
             ['key' => 'site_phone', 'value' => '+91 98765 43210 / +91 79 4000 8888', 'created_at' => now(), 'updated_at' => now()],
-            ['key' => 'site_email', 'value' => 'concierge@dvsrealty.com', 'created_at' => now(), 'updated_at' => now()],
+            ['key' => 'site_email', 'value' => 'divyesh@dvsrealty.com', 'created_at' => now(), 'updated_at' => now()],
             ['key' => 'site_working_hours', 'value' => 'Mon - Sat: 9:00 AM - 8:00 PM IST', 'created_at' => now(), 'updated_at' => now()],
         ]);
     }

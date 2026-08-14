@@ -27,7 +27,7 @@ class DatabaseSeeder extends Seeder
         // 1. Seed Users
         $admin = User::create([
             'name' => 'System Admin',
-            'email' => 'admin@realestate.com',
+            'email' => 'admin@divyesh.pro',
             'password' => Hash::make('password'),
             'role' => 'admin',
             'phone' => '+91 98765 43210',
@@ -37,7 +37,7 @@ class DatabaseSeeder extends Seeder
 
         $agentUser1 = User::create([
             'name' => 'Rajesh Verma',
-            'email' => 'agent@realestate.com',
+            'email' => 'agent@divyesh.pro',
             'password' => Hash::make('password'),
             'role' => 'agent',
             'phone' => '+91 98980 12345',
@@ -47,7 +47,7 @@ class DatabaseSeeder extends Seeder
 
         $agentUser2 = User::create([
             'name' => 'Ananya Sharma',
-            'email' => 'agent2@realestate.com',
+            'email' => 'agent2@divyesh.pro',
             'password' => Hash::make('password'),
             'role' => 'agent',
             'phone' => '+91 98799 87654',
@@ -57,7 +57,7 @@ class DatabaseSeeder extends Seeder
 
         $agentUser3 = User::create([
             'name' => 'Vikramaditya Singh',
-            'email' => 'agent3@realestate.com',
+            'email' => 'agent3@divyesh.pro',
             'password' => Hash::make('password'),
             'role' => 'agent',
             'phone' => '+91 99099 11223',
@@ -67,7 +67,7 @@ class DatabaseSeeder extends Seeder
 
         $buyer = User::create([
             'name' => 'Divyesh Lunagariya',
-            'email' => 'user@realestate.com',
+            'email' => 'user@divyesh.pro',
             'password' => Hash::make('password'),
             'role' => 'user',
             'phone' => '+91 90123 45678',
@@ -80,7 +80,7 @@ class DatabaseSeeder extends Seeder
             'user_id' => $agentUser1->id,
             'name' => 'Rajesh Verma',
             'slug' => 'rajesh-verma',
-            'email' => 'agent@realestate.com',
+            'email' => 'agent@divyesh.pro',
             'phone' => '+91 98980 12345',
             'agency_name' => 'DVS Premier Estates',
             'experience_years' => 12,
@@ -98,7 +98,7 @@ class DatabaseSeeder extends Seeder
             'user_id' => $agentUser2->id,
             'name' => 'Ananya Sharma',
             'slug' => 'ananya-sharma',
-            'email' => 'agent2@realestate.com',
+            'email' => 'agent2@divyesh.pro',
             'phone' => '+91 98799 87654',
             'agency_name' => 'Horizon Luxury Living',
             'experience_years' => 8,
@@ -115,7 +115,7 @@ class DatabaseSeeder extends Seeder
             'user_id' => $agentUser3->id,
             'name' => 'Vikramaditya Singh',
             'slug' => 'vikramaditya-singh',
-            'email' => 'agent3@realestate.com',
+            'email' => 'agent3@divyesh.pro',
             'phone' => '+91 99099 11223',
             'agency_name' => 'Imperial Realty Group',
             'experience_years' => 15,
@@ -675,7 +675,7 @@ class DatabaseSeeder extends Seeder
             'property_id' => 1,
             'agent_id' => $agent1->id,
             'name' => 'Divyesh Lunagariya',
-            'email' => 'user@realestate.com',
+            'email' => 'user@divyesh.pro',
             'phone' => '+91 90123 45678',
             'message' => 'I would like to schedule a private viewing for The Glass Pavilion sky villa this weekend.',
             'status' => 'new',
@@ -686,7 +686,7 @@ class DatabaseSeeder extends Seeder
             'property_id' => 1,
             'agent_id' => $agent1->id,
             'name' => 'Divyesh Lunagariya',
-            'email' => 'user@realestate.com',
+            'email' => 'user@divyesh.pro',
             'phone' => '+91 90123 45678',
             'date' => now()->addDays(3)->format('Y-m-d'),
             'time_slot' => '11:00 AM',

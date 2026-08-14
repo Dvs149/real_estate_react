@@ -15,7 +15,7 @@ class SettingController extends Controller
         $defaults = [
             'site_address' => 'Sindhu Bhavan Road, Bodakdev, Ahmedabad, Gujarat 380054',
             'site_phone' => '+91 98765 43210 / +91 79 4000 8888',
-            'site_email' => 'concierge@dvsrealty.com',
+            'site_email' => 'divyesh@dvsrealty.com',
             'site_working_hours' => 'Mon - Sat: 9:00 AM - 8:00 PM IST',
         ];
 
@@ -39,7 +39,7 @@ class SettingController extends Controller
         $defaults = [
             'site_address' => 'Sindhu Bhavan Road, Bodakdev, Ahmedabad, Gujarat 380054',
             'site_phone' => '+91 98765 43210 / +91 79 4000 8888',
-            'site_email' => 'concierge@dvsrealty.com',
+            'site_email' => 'divyesh@dvsrealty.com',
             'site_working_hours' => 'Mon - Sat: 9:00 AM - 8:00 PM IST',
         ];
 
