@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Link, useLocation, useNavigate, useSearchParams } from 'react-router-dom';
 import { Building2, Heart, Menu, X, LogOut, LayoutDashboard, Shield, ChevronDown, User as UserIcon } from 'lucide-react';
 import { motion } from 'framer-motion';
@@ -13,6 +13,31 @@ export default function Navbar() {
   const [scrolled, setScrolled] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [userDropdownOpen, setUserDropdownOpen] = useState(false);
+
+  const navRef = useRef<HTMLElement>(null);
+  const [pillStyle, setPillStyle] = useState<{ left: number; width: number; ready: boolean }>({
+    left: 0,
+    width: 0,
+    ready: false,
+  });
+
+  const updatePillPosition = () => {
+    if (!navRef.current) return;
+    const activeEl = navRef.current.querySelector('[data-active="true"]') as HTMLElement;
+    if (activeEl) {
+      setPillStyle({
+        left: activeEl.offsetLeft,
+        width: activeEl.offsetWidth,
+        ready: true,
+      });
+    }
+  };
+
+  useEffect(() => {
+    updatePillPosition();
+    window.addEventListener('resize', updatePillPosition);
+    return () => window.removeEventListener('resize', updatePillPosition);
+  }, [location.pathname, location.search]);
 
   useEffect(() => {
     const handleScroll = () => {
@@ -83,26 +108,35 @@ export default function Navbar() {
         </Link>
 
         {/* Desktop Nav Links */}
-        <nav className="hidden md:flex items-center gap-1 bg-slate-900/80 p-1.5 rounded-full border border-slate-800/80 backdrop-blur-md relative shadow-inner">
+        <nav
+          ref={navRef}
+          className="hidden md:flex items-center gap-1 bg-slate-900/80 p-1.5 rounded-full border border-slate-800/80 backdrop-blur-md relative shadow-inner"
+        >
+          {pillStyle.ready && (
+            <motion.div
+              className="absolute top-1.5 bottom-1.5 bg-amber-400 rounded-full shadow-md shadow-amber-400/20 z-0 pointer-events-none"
+              initial={false}
+              animate={{
+                left: pillStyle.left,
+                width: pillStyle.width,
+              }}
+              transition={{ type: 'spring', stiffness: 380, damping: 30 }}
+            />
+          )}
+
           {navLinks.map((link) => {
             const active = isLinkActive(link);
             return (
               <Link
                 key={link.name}
                 to={link.href}
-                className={`relative px-4 py-1.5 rounded-full text-xs font-semibold transition-colors z-10 ${
+                data-active={active}
+                className={`relative px-4 py-1.5 rounded-full text-xs transition-colors duration-200 z-10 ${
                   active
                     ? 'text-slate-950 font-bold'
-                    : 'text-slate-300 hover:text-white hover:bg-slate-800/60'
+                    : 'text-slate-300 font-semibold hover:text-white hover:bg-slate-800/60'
                 }`}
               >
-                {active && (
-                  <motion.span
-                    layoutId="nav-active-pill"
-                    className="absolute inset-0 bg-amber-400 rounded-full shadow-md shadow-amber-400/20 -z-10"
-                    transition={{ type: 'spring', stiffness: 380, damping: 30 }}
-                  />
-                )}
                 {link.name}
               </Link>
             );

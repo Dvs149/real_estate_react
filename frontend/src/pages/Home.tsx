@@ -123,6 +123,7 @@ export default function Home() {
               <img
                 src={loc.image || 'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&q=80&w=600'}
                 alt={loc.name}
+                loading="lazy"
                 className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
               />
               <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/20 to-transparent" />
@@ -198,6 +199,7 @@ export default function Home() {
             <img
               src="https://images.unsplash.com/photo-1600607687939-ce8a6c25118c?auto=format&fit=crop&q=80&w=1200"
               alt="Luxury Estate Advisory"
+              loading="lazy"
               className="w-full h-full object-cover"
             />
           </div>
@@ -227,6 +229,7 @@ export default function Home() {
                 <img
                   src={agent.avatar || 'https://images.unsplash.com/photo-1560250097-0b93528c311a?auto=format&fit=crop&q=80&w=400'}
                   alt={agent.name}
+                  loading="lazy"
                   className="w-24 h-24 rounded-full object-cover mx-auto border-2 border-amber-400/50 shadow-lg group-hover:scale-105 transition-transform"
                 />
                 <div>
@@ -281,6 +284,7 @@ export default function Home() {
                     <img
                       src={t.avatar || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=100'}
                       alt={t.name}
+                      loading="lazy"
                       className="w-10 h-10 rounded-full object-cover border border-amber-400/40"
                     />
                     <div>
@@ -315,6 +319,7 @@ export default function Home() {
                   <img
                     src={b.image || 'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&q=80&w=800'}
                     alt={b.title}
+                    loading="lazy"
                     className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                   />
                 </div>

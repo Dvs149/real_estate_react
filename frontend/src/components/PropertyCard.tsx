@@ -79,6 +79,7 @@ export default function PropertyCard({
         <img
           src={primaryImage}
           alt={property.title}
+          loading="lazy"
           className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
         />
 
@@ -220,6 +221,7 @@ export default function PropertyCard({
                   <img
                     src={agentAvatar}
                     alt={agentName}
+                    loading="lazy"
                     className="w-6.5 h-6.5 rounded-full object-cover border border-slate-700 group-hover/agent:border-amber-400 group-hover/agent:ring-2 group-hover/agent:ring-amber-400/20 transition-all duration-200 shrink-0"
                   />
                   <span className="text-xs text-slate-300 group-hover/agent:text-amber-300 transition-colors truncate font-medium min-w-0">
@@ -240,6 +242,7 @@ export default function PropertyCard({
                         <img
                           src={agentAvatar}
                           alt={agentName}
+                          loading="lazy"
                           className="w-11 h-11 rounded-xl object-cover border-2 border-amber-400/80 shadow-md"
                         />
                         <span
