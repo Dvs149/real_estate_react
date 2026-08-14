@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 64 64" fill="none">
+  <rect width="64" height="64" rx="16" fill="url(#amber_grad)"/>
+  <path d="M26 14H38C40.2091 14 42 15.7909 42 18V50H22V18C22 15.7909 23.7909 14 26 14Z" stroke="#090d16" stroke-width="4.5" stroke-linejoin="round"/>
+  <path d="M14 30H22V50H14C12.8954 50 12 49.1046 12 48V32C12 30.8954 12.8954 30 14 30Z" stroke="#090d16" stroke-width="4.5" stroke-linejoin="round"/>
+  <path d="M42 26H50C51.1046 26 52 26.8954 52 28V48C52 49.1046 51.1046 50 50 50H42V26Z" stroke="#090d16" stroke-width="4.5" stroke-linejoin="round"/>
+  <line x1="28" y1="22" x2="36" y2="22" stroke="#090d16" stroke-width="4" stroke-linecap="round"/>
+  <line x1="28" y1="29" x2="36" y2="29" stroke="#090d16" stroke-width="4" stroke-linecap="round"/>
+  <line x1="28" y1="36" x2="36" y2="36" stroke="#090d16" stroke-width="4" stroke-linecap="round"/>
+  <line x1="28" y1="43" x2="36" y2="43" stroke="#090d16" stroke-width="4" stroke-linecap="round"/>
+  <defs>
+    <linearGradient id="amber_grad" x1="0" y1="64" x2="64" y2="0" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#f59e0b"/>
+      <stop offset="1" stop-color="#fcd34d"/>
+    </linearGradient>
+  </defs>
+</svg>
