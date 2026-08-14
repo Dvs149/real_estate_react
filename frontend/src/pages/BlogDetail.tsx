@@ -3,6 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { getBlogBySlug } from '../services/api';
 import { Blog } from '../types';
 import { ChevronLeft, Loader2, Calendar, User as UserIcon } from 'lucide-react';
+import { formatDate } from '../utils/formatters';
 
 export default function BlogDetail() {
   const { slug } = useParams<{ slug: string }>();
@@ -55,7 +56,7 @@ export default function BlogDetail() {
           </div>
           <div className="flex items-center gap-1.5">
             <Calendar className="w-4 h-4 text-amber-400" />
-            <span>{blog.published_at ? new Date(blog.published_at).toLocaleDateString() : 'Recent'}</span>
+            <span>{blog.published_at ? formatDate(blog.published_at) : 'Recent'}</span>
           </div>
         </div>
       </div>

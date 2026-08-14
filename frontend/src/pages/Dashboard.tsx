@@ -1,10 +1,13 @@
 import React, { useState, useEffect } from 'react';
-import { useSearchParams, useNavigate } from 'react-router-dom';
+import { useSearchParams, useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
-import { getFavorites, getUserEnquiries, getUserAppointments } from '../services/api';
+import { getFavorites, getUserEnquiries, getUserAppointments, updateAppointmentStatus } from '../services/api';
 import PropertyCard from '../components/PropertyCard';
+import CustomDatePicker from '../components/CustomDatePicker';
+import CustomSelect from '../components/CustomSelect';
 import { Property, Enquiry, Appointment } from '../types';
-import { User, Heart, MessageSquare, Calendar, Shield, Save, Loader2, Clock } from 'lucide-react';
+import { User, Heart, MessageSquare, Calendar, Shield, Save, Loader2, Clock, MapPin, Mail, Phone, Edit2, CheckCircle2 } from 'lucide-react';
+import { formatDate } from '../utils/formatters';
 
 export default function Dashboard() {
   const [searchParams] = useSearchParams();
@@ -16,6 +19,43 @@ export default function Dashboard() {
   const [enquiries, setEnquiries] = useState<Enquiry[]>([]);
   const [appointments, setAppointments] = useState<Appointment[]>([]);
   const [loadingData, setLoadingData] = useState<boolean>(false);
+
+  // Reschedule & Edit Appointment State
+  const [editingAppId, setEditingAppId] = useState<number | null>(null);
+  const [editDate, setEditDate] = useState<string>('');
+  const [editTime, setEditTime] = useState<string>('');
+  const [editStatus, setEditStatus] = useState<string>('');
+  const [savingApp, setSavingApp] = useState<boolean>(false);
+
+  const handleStartEditApp = (app: Appointment) => {
+    setEditingAppId(app.id);
+    setEditDate(app.date ? app.date.split('T')[0] : '');
+    setEditTime(app.time_slot || '11:00 AM');
+    setEditStatus(app.status || 'pending');
+  };
+
+  const handleSaveAppReschedule = async (id: number) => {
+    setSavingApp(true);
+    try {
+      const res = await updateAppointmentStatus(id, editStatus, {
+        date: editDate,
+        time_slot: editTime,
+      });
+      const updatedData = res.data || {};
+      setAppointments((prev) =>
+        prev.map((app) =>
+          app.id === id
+            ? { ...app, ...updatedData, status: editStatus as any, date: editDate, time_slot: editTime }
+            : app
+        )
+      );
+      setEditingAppId(null);
+    } catch (err) {
+      console.error('Failed to reschedule appointment:', err);
+    } finally {
+      setSavingApp(false);
+    }
+  };
 
   // Profile form state
   const [name, setName] = useState(user?.name || '');
@@ -225,21 +265,103 @@ export default function Dashboard() {
           {loadingData ? (
             <div className="py-12 text-center text-slate-400">Loading enquiries...</div>
           ) : enquiries.length > 0 ? (
-            <div className="space-y-4">
-              {enquiries.map((enq) => (
-                <div key={enq.id} className="p-6 rounded-2xl bg-slate-900 border border-slate-800 space-y-2">
-                  <div className="flex justify-between items-start">
-                    <div>
-                      <h4 className="font-bold text-white text-base">{enq.property?.title || 'General Enquiry'}</h4>
-                      <p className="text-xs text-slate-400">Sent on: {enq.created_at ? new Date(enq.created_at).toLocaleDateString() : ''}</p>
+            <div className="space-y-3">
+              {enquiries.map((enq) => {
+                const prop = enq.property;
+                const propImage =
+                  prop?.primary_image ||
+                  (prop?.images && prop.images.length > 0
+                    ? prop.images[0].image_path
+                    : 'https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?auto=format&fit=crop&q=80&w=400');
+
+                return (
+                  <div key={enq.id} className="p-4 sm:p-5 rounded-2xl bg-slate-900 border border-slate-800 hover:border-slate-700/80 transition-all space-y-3 shadow-lg">
+                    {/* Top Row: Thumbnail + Info + Status */}
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="flex items-center gap-3.5 min-w-0">
+                        {propImage && (
+                          <img
+                            src={propImage}
+                            alt={prop?.title || 'Property'}
+                            className="w-12 h-12 sm:w-14 sm:h-14 rounded-xl object-cover border border-slate-800 shrink-0"
+                          />
+                        )}
+                        <div className="min-w-0 space-y-0.5">
+                          {prop ? (
+                            <Link
+                              to={`/properties/${prop.slug}`}
+                              className="font-bold text-white hover:text-amber-400 transition-colors text-sm sm:text-base block truncate"
+                            >
+                              {prop.title}
+                            </Link>
+                          ) : (
+                            <h4 className="font-bold text-white text-sm sm:text-base truncate">General Property Inquiry</h4>
+                          )}
+                          <div className="flex items-center gap-3 text-xs">
+                            <span className="text-amber-400 font-mono font-bold">
+                              {prop?.formatted_price || (prop?.price ? `₹ ${prop.price}` : '')}
+                            </span>
+                            {prop?.location && (
+                              <span className="text-slate-400 text-[11px] flex items-center gap-1 truncate">
+                                <MapPin className="w-3 h-3 text-amber-400 shrink-0" />
+                                {prop.location.city}, {prop.location.state}
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+
+                      <span
+                        className={`px-2.5 py-1 rounded-lg text-[10px] font-bold uppercase shrink-0 ${
+                          enq.status === 'new'
+                            ? 'bg-blue-500/20 text-blue-300 border border-blue-500/30'
+                            : enq.status === 'contact_in_progress'
+                            ? 'bg-amber-400/20 text-amber-300 border border-amber-400/30'
+                            : 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30'
+                        }`}
+                      >
+                        {enq.status === 'contact_in_progress' ? 'IN PROGRESS' : enq.status}
+                      </span>
                     </div>
-                    <span className="px-3 py-1 rounded-full text-[10px] font-bold uppercase bg-amber-400/20 text-amber-300">
-                      Status: {enq.status}
-                    </span>
+
+                    {/* Meta info in 1 compact bar */}
+                    <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-1.5 text-[11px] text-slate-400 pt-2 border-t border-slate-800/60">
+                      <div className="flex items-center gap-3 flex-wrap">
+                        <span className="text-amber-300/90 font-medium flex items-center gap-1">
+                          <Clock className="w-3 h-3 shrink-0" />
+                          {enq.created_at ? formatDate(enq.created_at) : 'Recent Inquiry'}
+                        </span>
+                        <span>•</span>
+                        <span className="text-slate-300 font-medium flex items-center gap-1">
+                          <User className="w-3 h-3 text-slate-400 shrink-0" />
+                          {enq.name}
+                        </span>
+                        <span>•</span>
+                        <span className="text-slate-400 flex items-center gap-1">
+                          <Mail className="w-3 h-3 shrink-0" />
+                          {enq.email}
+                        </span>
+                        {enq.phone && (
+                          <>
+                            <span>•</span>
+                            <span className="text-slate-400 flex items-center gap-1">
+                              <Phone className="w-3 h-3 shrink-0" />
+                              {enq.phone}
+                            </span>
+                          </>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Compact Message Box */}
+                    {enq.message && (
+                      <div className="bg-slate-950/70 p-2.5 rounded-xl border border-slate-800/60 text-xs">
+                        <p className="text-slate-300 italic text-[11px]">"{enq.message}"</p>
+                      </div>
+                    )}
                   </div>
-                  <p className="text-xs text-slate-300 italic bg-slate-950 p-3 rounded-xl border border-slate-800">"{enq.message}"</p>
-                </div>
-              ))}
+                );
+              })}
             </div>
           ) : (
             <div className="p-8 rounded-3xl bg-slate-900 border border-slate-800 text-center text-slate-400 text-sm">
@@ -255,25 +377,189 @@ export default function Dashboard() {
           {loadingData ? (
             <div className="py-12 text-center text-slate-400">Loading visit requests...</div>
           ) : appointments.length > 0 ? (
-            <div className="space-y-4">
-              {appointments.map((app) => (
-                <div key={app.id} className="p-6 rounded-2xl bg-slate-900 border border-slate-800 space-y-3">
-                  <div className="flex justify-between items-start">
-                    <div>
-                      <h4 className="font-bold text-white text-base">{app.property?.title}</h4>
-                      <p className="text-xs text-amber-400 font-semibold flex items-center gap-1 mt-1">
-                        <Clock className="w-3.5 h-3.5" /> Scheduled Date: {app.date} at {app.time_slot}
-                      </p>
+            <div className="space-y-3">
+              {appointments.map((app) => {
+                const prop = app.property;
+                const propImage =
+                  prop?.primary_image ||
+                  (prop?.images && prop.images.length > 0
+                    ? prop.images[0].image_path
+                    : 'https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?auto=format&fit=crop&q=80&w=400');
+
+                return (
+                  <div key={app.id} className="p-4 sm:p-5 rounded-2xl bg-slate-900 border border-slate-800 hover:border-slate-700/80 transition-all space-y-3 shadow-lg">
+                    {/* Top Row: Thumbnail + Info + Status */}
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="flex items-center gap-3.5 min-w-0">
+                        {propImage && (
+                          <img
+                            src={propImage}
+                            alt={prop?.title || 'Property'}
+                            className="w-12 h-12 sm:w-14 sm:h-14 rounded-xl object-cover border border-slate-800 shrink-0"
+                          />
+                        )}
+                        <div className="min-w-0 space-y-0.5">
+                          {prop ? (
+                            <Link
+                              to={`/properties/${prop.slug}`}
+                              className="font-bold text-white hover:text-amber-400 transition-colors text-sm sm:text-base block truncate"
+                            >
+                              {prop.title}
+                            </Link>
+                          ) : (
+                            <h4 className="font-bold text-white text-sm sm:text-base truncate">Property Walkthrough</h4>
+                          )}
+                          <div className="flex items-center gap-3 text-xs">
+                            <span className="text-amber-400 font-mono font-bold">
+                              {prop?.formatted_price || (prop?.price ? `₹ ${prop.price}` : '')}
+                            </span>
+                            {prop?.location && (
+                              <span className="text-slate-400 text-[11px] flex items-center gap-1 truncate">
+                                <MapPin className="w-3 h-3 text-amber-400 shrink-0" />
+                                {prop.location.city}, {prop.location.state}
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center gap-2 shrink-0">
+                        <span
+                          className={`px-2.5 py-1 rounded-lg text-[10px] font-bold uppercase ${
+                            app.status === 'confirmed'
+                              ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30'
+                              : app.status === 'completed'
+                              ? 'bg-blue-500/20 text-blue-300 border border-blue-500/30'
+                              : app.status === 'cancelled'
+                              ? 'bg-rose-500/20 text-rose-300 border border-rose-500/30'
+                              : 'bg-amber-400/20 text-amber-300 border border-amber-400/30'
+                          }`}
+                        >
+                          {app.status}
+                        </span>
+
+                        <button
+                          type="button"
+                          onClick={() => (editingAppId === app.id ? setEditingAppId(null) : handleStartEditApp(app))}
+                          className="px-2.5 py-1 rounded-lg bg-amber-400/10 border border-amber-400/30 text-amber-300 hover:bg-amber-400 hover:text-slate-950 text-[11px] font-bold transition-all flex items-center gap-1 cursor-pointer"
+                        >
+                          <Edit2 className="w-3 h-3" /> Reschedule
+                        </button>
+                      </div>
                     </div>
-                    <span className={`px-3 py-1 rounded-full text-[10px] font-bold uppercase ${
-                      app.status === 'confirmed' ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30' : 'bg-amber-400/20 text-amber-300'
-                    }`}>
-                      {app.status}
-                    </span>
+
+                    {/* Meta info in 1 compact bar */}
+                    <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-1.5 text-[11px] text-slate-400 pt-2 border-t border-slate-800/60">
+                      <div className="flex items-center gap-3 flex-wrap">
+                        <span className="text-amber-300 font-bold flex items-center gap-1">
+                          <Calendar className="w-3 h-3 shrink-0" />
+                          {formatDate(app.date)}
+                        </span>
+                        <span className="text-amber-300 font-bold flex items-center gap-1">
+                          <Clock className="w-3 h-3 shrink-0" />
+                          {app.time_slot}
+                        </span>
+                        <span>•</span>
+                        <span className="text-slate-300 font-medium flex items-center gap-1">
+                          <User className="w-3 h-3 text-slate-400 shrink-0" />
+                          {app.name}
+                        </span>
+                        <span>•</span>
+                        <span className="text-slate-400 flex items-center gap-1">
+                          <Mail className="w-3 h-3 shrink-0" />
+                          {app.email}
+                        </span>
+                        {app.phone && (
+                          <>
+                            <span>•</span>
+                            <span className="text-slate-400 flex items-center gap-1">
+                              <Phone className="w-3 h-3 shrink-0" />
+                              {app.phone}
+                            </span>
+                          </>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Special Requests / Notes */}
+                    {app.notes && (
+                      <div className="bg-slate-950/70 p-2.5 rounded-xl border border-slate-800/60 text-xs">
+                        <p className="text-slate-300 italic text-[11px]">"{app.notes}"</p>
+                      </div>
+                    )}
+
+                    {/* Expandable Reschedule Controls */}
+                    {editingAppId === app.id && (
+                      <div className="p-3.5 rounded-xl bg-slate-950 border border-amber-400/30 space-y-3 animate-in fade-in">
+                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5 text-xs">
+                          <div className="space-y-1">
+                            <span className="text-[10px] font-bold text-slate-400 uppercase block">Reschedule Date</span>
+                            <CustomDatePicker
+                              value={editDate}
+                              onChange={(newDate) => setEditDate(newDate)}
+                              minDate={new Date().toISOString().split('T')[0]}
+                            />
+                          </div>
+
+                          <div className="space-y-1">
+                            <span className="text-[10px] font-bold text-slate-400 uppercase block">Time Slot</span>
+                            <CustomSelect
+                              value={editTime}
+                              onChange={(newTime) => setEditTime(newTime)}
+                              options={[
+                                { value: '09:00 AM', label: '09:00 AM' },
+                                { value: '10:00 AM', label: '10:00 AM' },
+                                { value: '11:00 AM', label: '11:00 AM' },
+                                { value: '12:00 PM', label: '12:00 PM' },
+                                { value: '02:00 PM', label: '02:00 PM' },
+                                { value: '04:00 PM', label: '04:00 PM' },
+                                { value: '06:00 PM', label: '06:00 PM' },
+                              ]}
+                              variant="compact"
+                              direction="up"
+                            />
+                          </div>
+
+                          <div className="space-y-1">
+                            <span className="text-[10px] font-bold text-slate-400 uppercase block">Status</span>
+                            <CustomSelect
+                              value={editStatus}
+                              onChange={(newStatus) => setEditStatus(newStatus)}
+                              options={[
+                                { value: 'pending', label: 'Pending' },
+                                { value: 'confirmed', label: 'Confirmed' },
+                                { value: 'completed', label: 'Completed' },
+                                { value: 'cancelled', label: 'Cancelled' },
+                              ]}
+                              variant="compact"
+                              direction="up"
+                            />
+                          </div>
+                        </div>
+
+                        <div className="flex justify-end gap-2 pt-2 border-t border-slate-900">
+                          <button
+                            type="button"
+                            onClick={() => setEditingAppId(null)}
+                            className="px-3 py-1.5 rounded-lg bg-slate-800 text-slate-300 text-xs font-semibold hover:bg-slate-700 transition-colors cursor-pointer"
+                          >
+                            Cancel
+                          </button>
+                          <button
+                            type="button"
+                            disabled={savingApp}
+                            onClick={() => handleSaveAppReschedule(app.id)}
+                            className="px-3.5 py-1.5 rounded-lg bg-amber-400 text-slate-950 text-xs font-bold hover:bg-amber-300 flex items-center gap-1.5 transition-colors cursor-pointer shadow-md"
+                          >
+                            {savingApp && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
+                            Save
+                          </button>
+                        </div>
+                      </div>
+                    )}
                   </div>
-                  {app.notes && <p className="text-xs text-slate-400">Notes: {app.notes}</p>}
-                </div>
-              ))}
+                );
+              })}
             </div>
           ) : (
             <div className="p-8 rounded-3xl bg-slate-900 border border-slate-800 text-center text-slate-400 text-sm">

@@ -513,6 +513,162 @@ class DatabaseSeeder extends Seeder
             $property->amenities()->sync(array_slice($allAmenities, 0, rand(4, 8)));
         }
 
+        // Generate additional 142 realistic properties to reach 150 properties total
+        $allLocations = Location::all();
+        $allTypes = PropertyType::all();
+        $allAgentsList = [$agent1->id, $agent2->id, $agent3->id];
+        $allAmenitiesList = $allAmenities;
+
+        $prefixes = [
+            'The Heritage', 'Skyline Horizon', 'Aura Luxury', 'Emerald Heights', 'Imperial Park',
+            'Serenity Greens', 'Prestige Solitaire', 'Oberoi Crest', 'Godrej Palm', 'DLF Crown',
+            'Lodha Panoramas', 'Hiranandani Bay', 'Sobha Sanctuary', 'Brigade Terrace', 'Mantri Bliss',
+            'Total Environment', 'Adani Sapphire', 'Phoenix Vista', 'Marathon Tower', 'Rustomjee Regency',
+            'Piramal Heights', 'Runwal Courtyard', 'K Raheja Estate', 'Salarpuria Haven', 'Puravankara Manor',
+            'Mahindra World', 'Shapoorji Pallonji', 'Tata Housing', 'Whiteland Avenue', 'M3M Signature'
+        ];
+
+        $localityByCity = [
+            'Ahmedabad' => ['Sindhu Bhavan Road', 'Bodakdev', 'Satellite', 'SG Highway', 'Thaltej', 'Prahlad Nagar', 'Ambli Road', 'Vastrapur', 'Science City Road', 'Bopal'],
+            'Mumbai' => ['Bandra West', 'Worli', 'BKC', 'Juhu', 'Lower Parel', 'Powai', 'Khar West', 'Prabhadevi', 'Lokhandwala', 'Malad West'],
+            'Bangalore' => ['Whitefield', 'Indiranagar', 'Koramangala', 'HSR Layout', 'Electronic City', 'Hebbal', 'Sadashivnagar', 'Yelahanka', 'Sarjapur Road'],
+            'Goa' => ['Candolim', 'Calangute', 'Anjuna', 'Porvorim', 'Panaji', 'Dona Paula', 'Vagator', 'Benaulim'],
+            'Gurgaon' => ['Golf Course Road', 'Sector 54', 'Sector 82', 'Cyber City', 'Sohna Road', 'Sector 65', 'Sector 48', 'Dwarka Expressway'],
+            'Pune' => ['Baner', 'Koregaon Park', 'Kalyani Nagar', 'Viman Nagar', 'Hinjewadi', 'Kharadi', 'Wakad'],
+            'Hyderabad' => ['Gachibowli', 'HITECH City', 'Jubilee Hills', 'Banjara Hills', 'Madhapur', 'Financial District', 'Kondapur'],
+            'Surat' => ['Vesu', 'Piplod', 'Adajan', 'City Light', 'Pal', 'Althan'],
+            'Jaipur' => ['C-Scheme', 'Vaishali Nagar', 'Malviya Nagar', 'Raja Park', 'Mansarovar'],
+        ];
+
+        $imagePools = [
+            'apartment' => [
+                'https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?auto=format&fit=crop&q=80&w=1200',
+                'https://images.unsplash.com/photo-1502672260266-1c1ef2d93688?auto=format&fit=crop&q=80&w=1200',
+                'https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?auto=format&fit=crop&q=80&w=1200',
+                'https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?auto=format&fit=crop&q=80&w=1200',
+                'https://images.unsplash.com/photo-1512917774080-9991f1c4c750?auto=format&fit=crop&q=80&w=1200',
+                'https://images.unsplash.com/photo-1600585152220-90363fe7e115?auto=format&fit=crop&q=80&w=1200',
+                'https://images.unsplash.com/photo-1600573472591-ee6c563aaec9?auto=format&fit=crop&q=80&w=1200',
+            ],
+            'villa' => [
+                'https://images.unsplash.com/photo-1613977257363-707ba9348227?auto=format&fit=crop&q=80&w=1200',
+                'https://images.unsplash.com/photo-1613490493576-7fde63acd811?auto=format&fit=crop&q=80&w=1200',
+                'https://images.unsplash.com/photo-1564013799919-ab600027ffc6?auto=format&fit=crop&q=80&w=1200',
+                'https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?auto=format&fit=crop&q=80&w=1200',
+                'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&q=80&w=1200',
+                'https://images.unsplash.com/photo-1600607687939-ce8a6c25118c?auto=format&fit=crop&q=80&w=1200',
+                'https://images.unsplash.com/photo-1600566753190-17f0baa2a6c3?auto=format&fit=crop&q=80&w=1200',
+            ],
+            'penthouse' => [
+                'https://images.unsplash.com/photo-1600607687920-4e2a09cf159d?auto=format&fit=crop&q=80&w=1200',
+                'https://images.unsplash.com/photo-1600566753086-00f18fb6b3ea?auto=format&fit=crop&q=80&w=1200',
+                'https://images.unsplash.com/photo-1600585154526-990dced4db0d?auto=format&fit=crop&q=80&w=1200',
+                'https://images.unsplash.com/photo-1600566753376-12c8ab7fb75b?auto=format&fit=crop&q=80&w=1200',
+                'https://images.unsplash.com/photo-1512917774080-9991f1c4c750?auto=format&fit=crop&q=80&w=1200',
+            ],
+            'duplex' => [
+                'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&q=80&w=1200',
+                'https://images.unsplash.com/photo-1600566753190-17f0baa2a6c3?auto=format&fit=crop&q=80&w=1200',
+                'https://images.unsplash.com/photo-1512917774080-9991f1c4c750?auto=format&fit=crop&q=80&w=1200',
+            ],
+            'commercial' => [
+                'https://images.unsplash.com/photo-1497366216548-37526070297c?auto=format&fit=crop&q=80&w=1200',
+                'https://images.unsplash.com/photo-1497215728101-856f4ea42174?auto=format&fit=crop&q=80&w=1200',
+                'https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?auto=format&fit=crop&q=80&w=1200',
+                'https://images.unsplash.com/photo-1497366811353-6870744d04b2?auto=format&fit=crop&q=80&w=1200',
+            ],
+        ];
+
+        for ($i = 9; $i <= 150; $i++) {
+            $loc = $allLocations->random();
+            $type = $allTypes->random();
+            $agentId = $allAgentsList[array_rand($allAgentsList)];
+
+            $cityLocalities = $localityByCity[$loc->city] ?? ['Prime Central Area'];
+            $locality = $cityLocalities[array_rand($cityLocalities)];
+            $prefix = $prefixes[array_rand($prefixes)];
+
+            $purpose = (rand(1, 100) <= 75) ? 'buy' : 'rent';
+            $isFeatured = (rand(1, 100) <= 20);
+
+            $bhk = ($type->slug === 'commercial') ? 0 : rand(2, 5);
+            $bathrooms = ($type->slug === 'commercial') ? rand(2, 6) : max(2, $bhk + rand(0, 1));
+            $area = rand(1100, 6800);
+
+            if ($purpose === 'buy') {
+                $price = match ($type->slug) {
+                    'penthouse' => rand(60, 250) * 1000000,
+                    'villa' => rand(35, 180) * 1000000,
+                    'duplex' => rand(25, 120) * 1000000,
+                    'commercial' => rand(30, 200) * 1000000,
+                    default => rand(8, 60) * 1000000,
+                };
+            } else {
+                $price = match ($type->slug) {
+                    'penthouse' => rand(150, 450) * 1000,
+                    'villa' => rand(100, 350) * 1000,
+                    'commercial' => rand(80, 500) * 1000,
+                    default => rand(25, 120) * 1000,
+                };
+            }
+
+            $title = "{$prefix} - {$bhk} BHK {$type->name} in {$locality}";
+            if ($type->slug === 'commercial') {
+                $title = "{$prefix} - Grade-A Commercial Floor in {$locality}";
+            }
+
+            $slug = Str::slug($title . '-' . $loc->city . '-' . $i);
+
+            $prop = Property::create([
+                'title' => $title,
+                'slug' => $slug,
+                'description' => "Luxury property offering world-class living standards in {$locality}, {$loc->city}. Features premium marble finishes, double-glazed soundproof glass, smart home automation, and panoramic city vistas.",
+                'property_type_id' => $type->id,
+                'location_id' => $loc->id,
+                'agent_id' => $agentId,
+                'price' => $price,
+                'purpose' => $purpose,
+                'bedrooms' => $bhk,
+                'bathrooms' => $bathrooms,
+                'area_sqft' => $area,
+                'furnished_status' => ['furnished', 'semi-furnished', 'unfurnished'][rand(0, 2)],
+                'property_status' => 'available',
+                'is_featured' => $isFeatured,
+                'is_published' => true,
+                'address' => "{$locality}, {$loc->city}, {$loc->state}",
+                'latitude' => 20.0000 + (rand(-500, 500) / 100),
+                'longitude' => 73.0000 + (rand(-500, 500) / 100),
+                'year_built' => rand(2020, 2025),
+                'views_count' => rand(150, 3500),
+            ]);
+
+            // Add 3 images
+            $poolKey = isset($imagePools[$type->slug]) ? $type->slug : 'apartment';
+            $pool = $imagePools[$poolKey];
+            shuffle($pool);
+
+            foreach (array_slice($pool, 0, rand(2, 3)) as $idx => $imgUrl) {
+                PropertyImage::create([
+                    'property_id' => $prop->id,
+                    'image_path' => $imgUrl,
+                    'is_primary' => ($idx === 0),
+                    'display_order' => $idx,
+                ]);
+            }
+
+            // Attach floorplan
+            PropertyFloorPlan::create([
+                'property_id' => $prop->id,
+                'image_path' => 'https://images.unsplash.com/photo-1600585154526-990dced4db0d?auto=format&fit=crop&q=80&w=800',
+                'title' => 'Architectural Floor Layout',
+                'floor_name' => 'Level 1 Plan',
+            ]);
+
+            // Sync 4-7 random amenities
+            shuffle($allAmenitiesList);
+            $prop->amenities()->sync(array_slice($allAmenitiesList, 0, rand(4, 7)));
+        }
+
         // 7. Seed Sample Enquiries & Appointments
         Enquiry::create([
             'user_id' => $buyer->id,

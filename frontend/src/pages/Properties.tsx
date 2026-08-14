@@ -3,6 +3,7 @@ import { useSearchParams } from 'react-router-dom';
 import PropertyCard from '../components/PropertyCard';
 import FilterSidebar from '../components/FilterSidebar';
 import PropertyCompare from '../components/PropertyCompare';
+import Pagination from '../components/Pagination';
 import { getProperties, getLocations, getPropertyTypes, getAmenities } from '../services/api';
 import { Property, Location, PropertyType, Amenity } from '../types';
 import { LayoutGrid, List, SlidersHorizontal, Loader2 } from 'lucide-react';
@@ -195,26 +196,13 @@ export default function Properties() {
             </div>
           )}
 
-          {/* Pagination */}
+          {/* Truncated Pagination */}
           {meta && meta.last_page > 1 && (
-            <div className="flex justify-center items-center gap-2 pt-8">
-              {[...Array(meta.last_page)].map((_, i) => {
-                const pageNum = String(i + 1);
-                return (
-                  <button
-                    key={pageNum}
-                    onClick={() => setFilters((prev) => ({ ...prev, page: pageNum }))}
-                    className={`w-10 h-10 rounded-xl font-bold text-xs transition-colors cursor-pointer ${
-                      filters.page === pageNum
-                        ? 'bg-amber-400 text-slate-950 shadow-md shadow-amber-400/20'
-                        : 'bg-slate-900 text-slate-300 border border-slate-800 hover:border-amber-400/40'
-                    }`}
-                  >
-                    {pageNum}
-                  </button>
-                );
-              })}
-            </div>
+            <Pagination
+              currentPage={Number(filters.page) || 1}
+              totalPages={meta.last_page}
+              onPageChange={(page) => setFilters((prev) => ({ ...prev, page: String(page) }))}
+            />
           )}
         </div>
       </div>

@@ -21,6 +21,7 @@ interface CustomSelectProps {
   triggerClassName?: string;
   disabled?: boolean;
   variant?: 'default' | 'hero' | 'compact';
+  direction?: 'down' | 'up' | 'auto';
 }
 
 export default function CustomSelect({
@@ -35,8 +36,10 @@ export default function CustomSelect({
   triggerClassName = '',
   disabled = false,
   variant = 'default',
+  direction = 'auto',
 }: CustomSelectProps) {
   const [isOpen, setIsOpen] = useState(false);
+  const [isDropUp, setIsDropUp] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const containerRef = useRef<HTMLDivElement>(null);
   const searchInputRef = useRef<HTMLInputElement>(null);
@@ -76,6 +79,22 @@ export default function CustomSelect({
     setSearchQuery('');
   };
 
+  const handleToggle = () => {
+    if (disabled) return;
+    if (!isOpen) {
+      if (direction === 'up') {
+        setIsDropUp(true);
+      } else if (direction === 'down') {
+        setIsDropUp(false);
+      } else if (containerRef.current) {
+        const rect = containerRef.current.getBoundingClientRect();
+        const spaceBelow = window.innerHeight - rect.bottom;
+        setIsDropUp(spaceBelow < 240);
+      }
+    }
+    setIsOpen((prev) => !prev);
+  };
+
   const isHero = variant === 'hero';
 
   return (
@@ -90,7 +109,7 @@ export default function CustomSelect({
       <button
         type="button"
         disabled={disabled}
-        onClick={() => !disabled && setIsOpen((prev) => !prev)}
+        onClick={handleToggle}
         className={`w-full flex items-center justify-between text-left transition-all duration-200 cursor-pointer ${
           isHero
             ? 'px-3 py-2 text-white text-xs sm:text-sm font-medium'
@@ -122,11 +141,13 @@ export default function CustomSelect({
       <AnimatePresence>
         {isOpen && (
           <motion.div
-            initial={{ opacity: 0, y: -6, scale: 0.98 }}
+            initial={{ opacity: 0, y: isDropUp ? 6 : -6, scale: 0.98 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: -6, scale: 0.98 }}
+            exit={{ opacity: 0, y: isDropUp ? 6 : -6, scale: 0.98 }}
             transition={{ duration: 0.15, ease: 'easeOut' }}
-            className="absolute left-0 right-0 z-50 mt-1.5 w-full bg-slate-900/95 border border-slate-700/80 rounded-2xl shadow-2xl shadow-black/80 backdrop-blur-xl overflow-hidden p-1.5 flex flex-col max-h-72"
+            className={`absolute left-0 right-0 z-[100] w-full bg-slate-900 border border-slate-700/80 rounded-2xl shadow-2xl shadow-black/80 backdrop-blur-xl overflow-hidden p-1.5 flex flex-col max-h-72 ${
+              isDropUp ? 'bottom-full mb-2' : 'top-full mt-1.5'
+            }`}
           >
             {/* Search Bar if enabled */}
             {(searchable || options.length > 7) && (

@@ -63,6 +63,7 @@ Route::middleware('auth:sanctum')->group(function () {
     // User Enquiries & Appointments History
     Route::get('/enquiries', [EnquiryController::class, 'index']);
     Route::get('/appointments', [AppointmentController::class, 'index']);
+    Route::patch('/appointments/{id}', [AppointmentController::class, 'update']);
 
     // Property Management (Agent/Admin)
     Route::middleware('agent')->group(function () {
@@ -81,6 +82,7 @@ Route::middleware('auth:sanctum')->group(function () {
         // Admin Management Suite
         Route::prefix('admin')->group(function () {
             Route::get('/stats', [AdminController::class, 'stats']);
+            Route::get('/appointments', [AdminController::class, 'appointmentsList']);
             Route::patch('/enquiries/{id}', [AdminController::class, 'updateEnquiryStatus']);
             Route::patch('/appointments/{id}', [AdminController::class, 'updateAppointmentStatus']);
             Route::post('/properties/{id}/publish', [AdminController::class, 'togglePropertyPublish']);

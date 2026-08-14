@@ -12,7 +12,7 @@ class EnquiryController extends Controller
     public function index(Request $request)
     {
         $user = $request->user();
-        $query = Enquiry::with(['property', 'agent']);
+        $query = Enquiry::with(['property.images', 'property.location', 'agent']);
 
         if (!$user->isAdmin()) {
             if ($user->isAgent() && $user->agentProfile) {

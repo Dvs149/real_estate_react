@@ -38,9 +38,9 @@ export default function Home() {
   return (
     <div className="space-y-24 pb-20">
       {/* HERO SECTION */}
-      <section className="relative min-h-[85vh] sm:min-h-[90vh] flex items-center justify-center pt-28 sm:pt-36 pb-12 sm:pb-20 px-3 sm:px-6 lg:px-8 overflow-hidden">
+      <section className="relative min-h-[85vh] sm:min-h-[90vh] flex items-center justify-center pt-28 sm:pt-36 pb-12 sm:pb-20 px-3 sm:px-6 lg:px-8">
         {/* Background Image with Overlay */}
-        <div className="absolute inset-0 z-0">
+        <div className="absolute inset-0 z-0 overflow-hidden">
           <img
             src="https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?auto=format&fit=crop&q=80&w=2000"
             alt="Luxury Real Estate Hero"

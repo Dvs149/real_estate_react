@@ -8,9 +8,16 @@ import { useAuth } from '../hooks/useAuth';
 interface PropertyCardProps {
   property: Property;
   onFavoriteToggle?: (id: number, isFav: boolean) => void;
+  showAgentPopover?: boolean;
+  showAgentInfo?: boolean;
 }
 
-export default function PropertyCard({ property, onFavoriteToggle }: PropertyCardProps) {
+export default function PropertyCard({
+  property,
+  onFavoriteToggle,
+  showAgentPopover = true,
+  showAgentInfo = true,
+}: PropertyCardProps) {
   const navigate = useNavigate();
   const { user } = useAuth();
   const [isFavorite, setIsFavorite] = useState<boolean>(!!property.is_favorite);
@@ -205,86 +212,90 @@ export default function PropertyCard({ property, onFavoriteToggle }: PropertyCar
             </div>
           </div>
 
-          <div className="flex items-center justify-between gap-2 pt-2 border-t border-slate-800/60">
+          <div className={`flex items-center gap-2 pt-2 border-t border-slate-800/60 ${showAgentInfo ? 'justify-between' : 'justify-end'}`}>
             {/* Agent Hover Card Container */}
-            <div className="group/agent relative min-w-0 flex-1">
-              <div className="flex items-center gap-2 cursor-pointer min-w-0" title={agentName}>
-                <img
-                  src={agentAvatar}
-                  alt={agentName}
-                  className="w-6.5 h-6.5 rounded-full object-cover border border-slate-700 group-hover/agent:border-amber-400 group-hover/agent:ring-2 group-hover/agent:ring-amber-400/20 transition-all duration-200 shrink-0"
-                />
-                <span className="text-xs text-slate-300 group-hover/agent:text-amber-300 transition-colors truncate font-medium min-w-0">
-                  {agentName}
-                </span>
-              </div>
+            {showAgentInfo && (
+              <div className="group/agent relative min-w-0 flex-1">
+                <div className="flex items-center gap-2 cursor-pointer min-w-0" title={agentName}>
+                  <img
+                    src={agentAvatar}
+                    alt={agentName}
+                    className="w-6.5 h-6.5 rounded-full object-cover border border-slate-700 group-hover/agent:border-amber-400 group-hover/agent:ring-2 group-hover/agent:ring-amber-400/20 transition-all duration-200 shrink-0"
+                  />
+                  <span className="text-xs text-slate-300 group-hover/agent:text-amber-300 transition-colors truncate font-medium min-w-0">
+                    {agentName}
+                  </span>
+                </div>
 
-              {/* Floating Agent Card Popover on Hover */}
-              <div className="absolute bottom-full -left-2 mb-2 z-50 w-[270px] max-w-[calc(100vw-3rem)] p-3.5 bg-slate-900/95 border border-amber-400/50 rounded-2xl shadow-2xl shadow-black/95 backdrop-blur-xl opacity-0 pointer-events-none group-hover/agent:opacity-100 group-hover/agent:pointer-events-auto transition-all duration-300 transform translate-y-2 group-hover/agent:translate-y-0 scale-95 group-hover/agent:scale-100 space-y-3 before:absolute before:top-full before:h-4 before:left-0 before:right-0 before:content-['']">
-                {/* Arrow Pointer Down */}
-                <div className="absolute top-full left-5 border-6 border-transparent border-t-slate-900" />
-                <div className="absolute top-full left-5 border-6 border-transparent border-t-amber-400/50 -z-10" />
+                {/* Floating Agent Card Popover on Hover */}
+                {showAgentPopover && (
+                  <div className="absolute bottom-full -left-2 mb-2 z-50 w-[270px] max-w-[calc(100vw-3rem)] p-3.5 bg-slate-900/95 border border-amber-400/50 rounded-2xl shadow-2xl shadow-black/95 backdrop-blur-xl opacity-0 pointer-events-none group-hover/agent:opacity-100 group-hover/agent:pointer-events-auto transition-all duration-300 transform translate-y-2 group-hover/agent:translate-y-0 scale-95 group-hover/agent:scale-100 space-y-3 before:absolute before:top-full before:h-4 before:left-0 before:right-0 before:content-['']">
+                    {/* Arrow Pointer Down */}
+                    <div className="absolute top-full left-5 border-6 border-transparent border-t-slate-900" />
+                    <div className="absolute top-full left-5 border-6 border-transparent border-t-amber-400/50 -z-10" />
 
-                {/* Header */}
-                <div className="flex items-start gap-2.5 border-b border-slate-800 pb-2.5">
-                  <div className="relative shrink-0">
-                    <img
-                      src={agentAvatar}
-                      alt={agentName}
-                      className="w-11 h-11 rounded-xl object-cover border-2 border-amber-400/80 shadow-md"
-                    />
-                    <span
-                      className="absolute -bottom-1 -right-1 w-4 h-4 bg-emerald-500 rounded-full border-2 border-slate-900 flex items-center justify-center text-[9px] text-white font-bold"
-                      title="Verified Agent"
-                    >
-                      ✓
-                    </span>
-                  </div>
+                    {/* Header */}
+                    <div className="flex items-start gap-2.5 border-b border-slate-800 pb-2.5">
+                      <div className="relative shrink-0">
+                        <img
+                          src={agentAvatar}
+                          alt={agentName}
+                          className="w-11 h-11 rounded-xl object-cover border-2 border-amber-400/80 shadow-md"
+                        />
+                        <span
+                          className="absolute -bottom-1 -right-1 w-4 h-4 bg-emerald-500 rounded-full border-2 border-slate-900 flex items-center justify-center text-[9px] text-white font-bold"
+                          title="Verified Agent"
+                        >
+                          ✓
+                        </span>
+                      </div>
 
-                  <div className="min-w-0 flex-1">
-                    <div className="flex items-center justify-between gap-1">
-                      <h4 className="text-xs sm:text-sm font-bold text-white truncate">{agentName}</h4>
-                      <span className="flex items-center gap-1 text-[10px] font-bold text-amber-400 bg-amber-400/10 px-1.5 py-0.5 rounded-md border border-amber-400/30 shrink-0">
-                        <Star className="w-3 h-3 fill-amber-400 stroke-amber-400 shrink-0" />
-                        <span>{rating}</span>
-                      </span>
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-center justify-between gap-1">
+                          <h4 className="text-xs sm:text-sm font-bold text-white truncate">{agentName}</h4>
+                          <span className="flex items-center gap-1 text-[10px] font-bold text-amber-400 bg-amber-400/10 px-1.5 py-0.5 rounded-md border border-amber-400/30 shrink-0">
+                            <Star className="w-3 h-3 fill-amber-400 stroke-amber-400 shrink-0" />
+                            <span>{rating}</span>
+                          </span>
+                        </div>
+                        <p className="text-[11px] text-slate-400 truncate mt-0.5">{agencyName}</p>
+                        <span className="inline-block mt-1 text-[10px] text-emerald-400 font-semibold bg-emerald-500/10 px-2 py-0.5 rounded-full border border-emerald-500/20">
+                          Verified Agent Specialist
+                        </span>
+                      </div>
                     </div>
-                    <p className="text-[11px] text-slate-400 truncate mt-0.5">{agencyName}</p>
-                    <span className="inline-block mt-1 text-[10px] text-emerald-400 font-semibold bg-emerald-500/10 px-2 py-0.5 rounded-full border border-emerald-500/20">
-                      Verified Agent Specialist
-                    </span>
-                  </div>
-                </div>
 
-                {/* Quick Stats Grid */}
-                <div className="grid grid-cols-2 gap-2 text-center text-xs bg-slate-950/70 p-2 rounded-xl border border-slate-800">
-                  <div className="space-y-0.5">
-                    <span className="text-[10px] text-slate-400 block font-medium">Experience</span>
-                    <span className="font-bold text-white text-xs">{experience}</span>
-                  </div>
-                  <div className="space-y-0.5 border-l border-slate-800">
-                    <span className="text-[10px] text-slate-400 block font-medium">Active Portfolio</span>
-                    <span className="font-bold text-amber-400 text-xs">{propertiesCount}+ Listings</span>
-                  </div>
-                </div>
+                    {/* Quick Stats Grid */}
+                    <div className="grid grid-cols-2 gap-2 text-center text-xs bg-slate-950/70 p-2 rounded-xl border border-slate-800">
+                      <div className="space-y-0.5">
+                        <span className="text-[10px] text-slate-400 block font-medium">Experience</span>
+                        <span className="font-bold text-white text-xs">{experience}</span>
+                      </div>
+                      <div className="space-y-0.5 border-l border-slate-800">
+                        <span className="text-[10px] text-slate-400 block font-medium">Active Portfolio</span>
+                        <span className="font-bold text-amber-400 text-xs">{propertiesCount}+ Listings</span>
+                      </div>
+                    </div>
 
-                {/* Profile Link Button */}
-                {agentSlug ? (
-                  <Link
-                    to={`/agents/${agentSlug}`}
-                    onClick={(e) => e.stopPropagation()}
-                    className="w-full py-2 px-3 rounded-xl bg-gradient-to-r from-amber-500 to-amber-400 hover:from-amber-400 hover:to-amber-300 text-slate-950 text-xs font-bold flex items-center justify-center gap-1.5 transition-all shadow-md shadow-amber-400/20 cursor-pointer"
-                  >
-                    <span>View Agent Profile</span>
-                    <ChevronRight className="w-3.5 h-3.5" />
-                  </Link>
-                ) : (
-                  <div className="text-[11px] text-slate-400 text-center font-medium py-1">
-                    Licensed Real Estate Specialist
+                    {/* Profile Link Button */}
+                    {agentSlug ? (
+                      <Link
+                        to={`/agents/${agentSlug}`}
+                        onClick={(e) => e.stopPropagation()}
+                        className="w-full py-2 px-3 rounded-xl bg-gradient-to-r from-amber-500 to-amber-400 hover:from-amber-400 hover:to-amber-300 text-slate-950 text-xs font-bold flex items-center justify-center gap-1.5 transition-all shadow-md shadow-amber-400/20 cursor-pointer"
+                      >
+                        <span>View Agent Profile</span>
+                        <ChevronRight className="w-3.5 h-3.5" />
+                      </Link>
+                    ) : (
+                      <div className="text-[11px] text-slate-400 text-center font-medium py-1">
+                        Licensed Real Estate Specialist
+                      </div>
+                    )}
                   </div>
                 )}
               </div>
-            </div>
+            )}
 
             <span className="text-xs font-semibold text-amber-400 group-hover:text-amber-300 flex items-center gap-1 whitespace-nowrap shrink-0">
               View Listing →

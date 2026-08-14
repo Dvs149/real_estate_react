@@ -5,6 +5,8 @@ import {
   getAdminStats,
   getProperties,
   updateEnquiryStatus,
+  getAdminAppointments,
+  updateAppointmentStatus,
   togglePropertyPublish,
   togglePropertyFeatured,
   getAdminUsers,
@@ -33,6 +35,8 @@ import {
 } from '../services/api';
 import { Property, PropertyType, Agent, User, Enquiry, Appointment, Location, Blog, BlogCategory } from '../types';
 import CustomSelect, { SelectOption } from '../components/CustomSelect';
+import CustomDatePicker from '../components/CustomDatePicker';
+import { formatDate } from '../utils/formatters';
 import {
   Shield,
   Building2,
@@ -50,10 +54,12 @@ import {
   LayoutDashboard,
   UserPlus,
   ChevronDown,
+  ChevronRight,
   Settings,
   CheckCircle2,
   Newspaper,
   Video,
+  Search,
 } from 'lucide-react';
 
 export default function Admin() {
@@ -62,12 +68,12 @@ export default function Admin() {
   const [searchParams] = useSearchParams();
   const { user, loading: authLoading } = useAuth();
 
-  const getActiveTab = (): 'overview' | 'properties' | 'locations' | 'blogs' | 'leads' | 'users' | 'settings' => {
-    if (pathTab && ['overview', 'properties', 'locations', 'blogs', 'leads', 'users', 'settings'].includes(pathTab)) {
+  const getActiveTab = (): 'overview' | 'properties' | 'locations' | 'blogs' | 'leads' | 'visits' | 'users' | 'settings' => {
+    if (pathTab && ['overview', 'properties', 'locations', 'blogs', 'leads', 'visits', 'users', 'settings'].includes(pathTab)) {
       return pathTab as any;
     }
     const queryTab = searchParams.get('tab');
-    if (queryTab && ['overview', 'properties', 'locations', 'blogs', 'leads', 'users', 'settings'].includes(queryTab)) {
+    if (queryTab && ['overview', 'properties', 'locations', 'blogs', 'leads', 'visits', 'users', 'settings'].includes(queryTab)) {
       return queryTab as any;
     }
     return 'overview';
@@ -81,6 +87,12 @@ export default function Admin() {
   const [usersList, setUsersList] = useState<User[]>([]);
   const [enquiries, setEnquiries] = useState<Enquiry[]>([]);
   const [appointments, setAppointments] = useState<Appointment[]>([]);
+  const [appointmentsList, setAppointmentsList] = useState<Appointment[]>([]);
+  const [appointmentSearch, setAppointmentSearch] = useState<string>('');
+  const [appointmentAgentFilter, setAppointmentAgentFilter] = useState<string>('');
+  const [appointmentStatusFilter, setAppointmentStatusFilter] = useState<string>('');
+  const [viewingAppointment, setViewingAppointment] = useState<Appointment | null>(null);
+  const [viewingEnquiry, setViewingEnquiry] = useState<Enquiry | null>(null);
   const [blogsList, setBlogsList] = useState<Blog[]>([]);
   const [categoriesList, setCategoriesList] = useState<BlogCategory[]>([]);
   const [propertyTypesList, setPropertyTypesList] = useState<PropertyType[]>([]);
@@ -178,7 +190,7 @@ export default function Admin() {
   const loadAdminData = async () => {
     setLoading(true);
     try {
-      const [statsRes, propsRes, locationsRes, usersRes, settingsRes, blogsRes, categoriesRes, typesRes, agentsRes] = await Promise.all([
+      const [statsRes, propsRes, locationsRes, usersRes, settingsRes, blogsRes, categoriesRes, typesRes, agentsRes, appointmentsRes] = await Promise.all([
         getAdminStats().catch(() => ({ stats: {}, recent_enquiries: [], recent_appointments: [] })),
         getProperties({ per_page: 50 }).catch(() => ({ data: [] })),
         getLocations().catch(() => ({ data: [] })),
@@ -188,11 +200,13 @@ export default function Admin() {
         getBlogCategories().catch(() => ({ data: [] })),
         getPropertyTypes().catch(() => ({ data: [] })),
         getAgents().catch(() => ({ data: [] })),
+        getAdminAppointments().catch(() => ({ data: [] })),
       ]);
 
       setStats(statsRes.stats);
       setEnquiries(statsRes.recent_enquiries || []);
       setAppointments(statsRes.recent_appointments || []);
+      setAppointmentsList(appointmentsRes.data || []);
       setProperties(propsRes.data || []);
       setLocationsList(locationsRes.data || []);
       setUsersList(usersRes.data || []);
@@ -611,12 +625,47 @@ export default function Admin() {
     );
   }
 
+  const handleAppointmentStatusChange = async (
+    id: number,
+    status?: string,
+    extra?: { date?: string; time_slot?: string; notes?: string }
+  ) => {
+    try {
+      const res = await updateAppointmentStatus(id, status, extra);
+      const updatedData = res.data || {};
+      setAppointmentsList((prev) =>
+        prev.map((app) => (app.id === id ? { ...app, ...updatedData, status: (status || app.status) as any } : app))
+      );
+      setAppointments((prev) =>
+        prev.map((app) => (app.id === id ? { ...app, ...updatedData, status: (status || app.status) as any } : app))
+      );
+    } catch (err) {
+      console.error('Error updating appointment:', err);
+    }
+  };
+
+  const filteredAppointments = appointmentsList.filter((app) => {
+    if (appointmentStatusFilter && app.status !== appointmentStatusFilter) return false;
+    if (appointmentAgentFilter && String(app.agent_id) !== appointmentAgentFilter) return false;
+    if (appointmentSearch.trim()) {
+      const q = appointmentSearch.toLowerCase();
+      const matchName = app.name?.toLowerCase().includes(q);
+      const matchEmail = app.email?.toLowerCase().includes(q);
+      const matchPhone = app.phone?.toLowerCase().includes(q);
+      const matchProp = app.property?.title?.toLowerCase().includes(q);
+      const matchAgent = app.agent?.name?.toLowerCase().includes(q);
+      return matchName || matchEmail || matchPhone || matchProp || matchAgent;
+    }
+    return true;
+  });
+
   const navMenuItems = [
     { id: 'overview', label: 'Overview', icon: LayoutDashboard, badge: null, path: '/admin/overview' },
     { id: 'properties', label: 'Properties Catalog', icon: Building2, badge: properties.length, path: '/admin/properties' },
     { id: 'locations', label: 'Metro Locations', icon: MapPin, badge: locationsList.length, path: '/admin/locations' },
     { id: 'blogs', label: 'Blog & Articles', icon: Newspaper, badge: blogsList.length, path: '/admin/blogs' },
     { id: 'leads', label: 'Customer Leads', icon: FileText, badge: enquiries.length, path: '/admin/leads' },
+    { id: 'visits', label: 'Visit Appointments', icon: CalendarCheck, badge: appointmentsList.length, path: '/admin/visits' },
     { id: 'users', label: 'Users & Roles', icon: Users, badge: usersList.length, path: '/admin/users' },
     { id: 'settings', label: 'Site & Contact Info', icon: Settings, badge: null, path: '/admin/settings' },
   ];
@@ -744,44 +793,156 @@ export default function Admin() {
               {/* Recent Inquiries & Appointments Grid */}
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
                 <div className="bg-slate-900 border border-slate-800 rounded-3xl p-6 space-y-4 shadow-xl">
-                  <h3 className="text-lg font-bold text-white flex items-center gap-2">
-                    <FileText className="w-5 h-5 text-amber-400" />
-                    Recent Property Inquiries
-                  </h3>
+                  <div className="flex items-center justify-between border-b border-slate-800 pb-3">
+                    <h3 className="text-lg font-bold text-white flex items-center gap-2">
+                      <FileText className="w-5 h-5 text-amber-400" />
+                      Recent Property Inquiries
+                    </h3>
+                    <Link
+                      to="/admin/leads"
+                      className="text-xs font-semibold text-amber-400 hover:text-amber-300 flex items-center gap-1 transition-colors"
+                    >
+                      View All <ChevronRight className="w-3.5 h-3.5" />
+                    </Link>
+                  </div>
+
                   <div className="space-y-3">
-                    {enquiries.slice(0, 5).map((enq) => (
-                      <div key={enq.id} className="p-3.5 rounded-2xl bg-slate-950/60 border border-slate-800 flex items-center justify-between text-xs">
-                        <div>
-                          <p className="font-bold text-white">{enq.name}</p>
-                          <p className="text-slate-400 text-[11px]">{enq.email} • {enq.phone}</p>
+                    {enquiries.slice(0, 5).map((enq) => {
+                      const prop = enq.property;
+                      const agent = enq.agent || prop?.agent;
+                      return (
+                        <div
+                          key={enq.id}
+                          onClick={() => setViewingEnquiry(enq)}
+                          className="p-4 rounded-2xl bg-slate-950/80 border border-slate-800 hover:border-amber-400/40 transition-all cursor-pointer space-y-2.5 group shadow-md"
+                        >
+                          <div className="flex items-start justify-between gap-3">
+                            <div className="min-w-0 space-y-0.5">
+                              <p className="font-bold text-white group-hover:text-amber-400 transition-colors text-xs sm:text-sm truncate">
+                                {prop?.title || 'General Property Inquiry'}
+                              </p>
+                              <p className="text-xs text-slate-400 truncate">
+                                Client: <span className="text-white font-medium">{enq.name}</span> ({enq.phone || enq.email})
+                              </p>
+                              {enq.message && (
+                                <p className="text-[11px] text-slate-400 italic line-clamp-1 bg-slate-900/60 px-2 py-0.5 rounded border border-slate-800/60 mt-1">
+                                  "{enq.message}"
+                                </p>
+                              )}
+                            </div>
+
+                            <span
+                              className={`px-2.5 py-1 rounded-md uppercase font-bold text-[10px] shrink-0 ${
+                                enq.status === 'new'
+                                  ? 'bg-blue-500/20 text-blue-300 border border-blue-500/30'
+                                  : enq.status === 'contact_in_progress'
+                                  ? 'bg-amber-400/20 text-amber-300 border border-amber-400/30'
+                                  : 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30'
+                              }`}
+                            >
+                              {enq.status === 'contact_in_progress' ? 'IN PROGRESS' : enq.status}
+                            </span>
+                          </div>
+
+                          {/* Agent Bar */}
+                          <div className="flex items-center justify-between pt-2 border-t border-slate-900 text-xs">
+                            <div className="flex items-center gap-2">
+                              <img
+                                src={
+                                  agent?.avatar ||
+                                  'https://images.unsplash.com/photo-1560250097-0b93528c311a?auto=format&fit=crop&q=80&w=100'
+                                }
+                                alt={agent?.name || 'Agent'}
+                                className="w-5 h-5 rounded-full object-cover border border-amber-400/40 shrink-0"
+                              />
+                              <span className="text-[11px] text-slate-300 font-medium">
+                                Agent: <span className="text-white font-semibold">{agent?.name || 'Concierge Desk'}</span>
+                              </span>
+                            </div>
+                            <span className="text-[10px] text-amber-400 group-hover:translate-x-1 transition-transform flex items-center gap-0.5 font-bold">
+                              Details →
+                            </span>
+                          </div>
                         </div>
-                        <span className={`px-2.5 py-1 rounded-md uppercase font-bold text-[10px] ${
-                          enq.status === 'new' ? 'bg-blue-500/20 text-blue-400' : 'bg-emerald-500/20 text-emerald-400'
-                        }`}>
-                          {enq.status}
-                        </span>
-                      </div>
-                    ))}
+                      );
+                    })}
                   </div>
                 </div>
 
                 <div className="bg-slate-900 border border-slate-800 rounded-3xl p-6 space-y-4 shadow-xl">
-                  <h3 className="text-lg font-bold text-white flex items-center gap-2">
-                    <CalendarCheck className="w-5 h-5 text-purple-400" />
-                    Pending Tour Appointments
-                  </h3>
+                  <div className="flex items-center justify-between border-b border-slate-800 pb-3">
+                    <h3 className="text-lg font-bold text-white flex items-center gap-2">
+                      <CalendarCheck className="w-5 h-5 text-purple-400" />
+                      Pending Tour Appointments
+                    </h3>
+                    <Link
+                      to="/admin/visits"
+                      className="text-xs font-semibold text-amber-400 hover:text-amber-300 flex items-center gap-1 transition-colors"
+                    >
+                      View All <ChevronRight className="w-3.5 h-3.5" />
+                    </Link>
+                  </div>
+
                   <div className="space-y-3">
-                    {appointments.slice(0, 5).map((apt) => (
-                      <div key={apt.id} className="p-3.5 rounded-2xl bg-slate-950/60 border border-slate-800 flex items-center justify-between text-xs">
-                        <div>
-                          <p className="font-bold text-white">{apt.name}</p>
-                          <p className="text-purple-300 text-[11px]">Requested: {apt.date} ({apt.time_slot})</p>
+                    {appointments.slice(0, 5).map((apt) => {
+                      const agent = apt.agent;
+                      const prop = apt.property;
+                      return (
+                        <div
+                          key={apt.id}
+                          onClick={() => setViewingAppointment(apt)}
+                          className="p-4 rounded-2xl bg-slate-950/80 border border-slate-800 hover:border-amber-400/40 transition-all cursor-pointer space-y-2.5 group shadow-md"
+                        >
+                          <div className="flex items-start justify-between gap-3">
+                            <div className="min-w-0 space-y-0.5">
+                              <p className="font-bold text-white group-hover:text-amber-400 transition-colors text-xs sm:text-sm truncate">
+                                {prop?.title || 'Property Walkthrough'}
+                              </p>
+                              <p className="text-xs text-slate-400 truncate">
+                                Client: <span className="text-white font-medium">{apt.name}</span> ({apt.phone || apt.email})
+                              </p>
+                              <p className="text-[11px] text-amber-300 font-medium">
+                                📅 {formatDate(apt.date)} at {apt.time_slot}
+                              </p>
+                            </div>
+
+                            <span
+                              className={`px-2.5 py-1 rounded-md uppercase font-bold text-[10px] shrink-0 ${
+                                apt.status === 'confirmed'
+                                  ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30'
+                                  : apt.status === 'completed'
+                                  ? 'bg-blue-500/20 text-blue-300 border border-blue-500/30'
+                                  : apt.status === 'cancelled'
+                                  ? 'bg-rose-500/20 text-rose-300 border border-rose-500/30'
+                                  : 'bg-amber-400/20 text-amber-300 border border-amber-400/30'
+                              }`}
+                            >
+                              {apt.status}
+                            </span>
+                          </div>
+
+                          {/* Agent Bar */}
+                          <div className="flex items-center justify-between pt-2 border-t border-slate-900 text-xs">
+                            <div className="flex items-center gap-2">
+                              <img
+                                src={
+                                  agent?.avatar ||
+                                  'https://images.unsplash.com/photo-1560250097-0b93528c311a?auto=format&fit=crop&q=80&w=100'
+                                }
+                                alt={agent?.name || 'Agent'}
+                                className="w-5 h-5 rounded-full object-cover border border-amber-400/40 shrink-0"
+                              />
+                              <span className="text-[11px] text-slate-300 font-medium">
+                                Agent: <span className="text-white font-semibold">{agent?.name || 'Unassigned'}</span>
+                              </span>
+                            </div>
+                            <span className="text-[10px] text-amber-400 group-hover:translate-x-1 transition-transform flex items-center gap-0.5 font-bold">
+                              Details →
+                            </span>
+                          </div>
                         </div>
-                        <span className="px-2.5 py-1 rounded-md bg-purple-500/20 text-purple-400 uppercase font-bold text-[10px]">
-                          {apt.status}
-                        </span>
-                      </div>
-                    ))}
+                      );
+                    })}
                   </div>
                 </div>
               </div>
@@ -1099,6 +1260,183 @@ export default function Admin() {
                   ))}
                 </tbody>
               </table>
+            </div>
+          )}
+
+          {/* VISIT APPOINTMENTS TAB */}
+          {activeTab === 'visits' && (
+            <div className="bg-slate-900 border border-slate-800 rounded-3xl p-6 sm:p-8 space-y-6 shadow-xl">
+              <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 border-b border-slate-800 pb-4">
+                <div>
+                  <h2 className="text-xl font-bold text-white flex items-center gap-2">
+                    <CalendarCheck className="w-5 h-5 text-amber-400" />
+                    Visit Appointments Management
+                  </h2>
+                  <p className="text-xs text-slate-400 mt-1">
+                    Track private walkthrough schedules, monitor assigned agents, and update appointment statuses.
+                  </p>
+                </div>
+
+                {/* Filter Controls */}
+                <div className="flex flex-wrap items-center gap-2.5">
+                  <div className="relative">
+                    <input
+                      type="text"
+                      placeholder="Search property, client, agent..."
+                      value={appointmentSearch}
+                      onChange={(e) => setAppointmentSearch(e.target.value)}
+                      className="pl-8 pr-3 py-2 rounded-xl bg-slate-950 border border-slate-800 text-xs text-white placeholder:text-slate-500 focus:outline-none focus:border-amber-400 w-48 sm:w-56"
+                    />
+                    <Search className="w-3.5 h-3.5 text-slate-500 absolute left-2.5 top-2.5" />
+                  </div>
+
+                  <CustomSelect
+                    value={appointmentAgentFilter}
+                    onChange={(val) => setAppointmentAgentFilter(val)}
+                    options={[
+                      { value: '', label: 'All Agents' },
+                      ...agentsList.map((a) => ({
+                        value: String(a.id),
+                        label: a.name,
+                      })),
+                    ]}
+                    variant="compact"
+                    className="w-40"
+                  />
+
+                  <CustomSelect
+                    value={appointmentStatusFilter}
+                    onChange={(val) => setAppointmentStatusFilter(val)}
+                    options={[
+                      { value: '', label: 'All Statuses' },
+                      { value: 'pending', label: 'Pending' },
+                      { value: 'confirmed', label: 'Confirmed' },
+                      { value: 'completed', label: 'Completed' },
+                      { value: 'cancelled', label: 'Cancelled' },
+                    ]}
+                    variant="compact"
+                    className="w-36"
+                  />
+                </div>
+              </div>
+
+              {/* Appointments List / Table */}
+              <div className="space-y-4">
+                {filteredAppointments.length > 0 ? (
+                  <div className="space-y-4">
+                    {filteredAppointments.map((app) => {
+                      const prop = app.property;
+                      const agent = app.agent;
+                      const primaryImg =
+                        prop?.primary_image ||
+                        (prop?.images && prop.images.length > 0 ? prop.images[0].image_path : null) ||
+                        'https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?auto=format&fit=crop&q=80&w=400';
+
+                      return (
+                        <div
+                          key={app.id}
+                          className="p-5 rounded-2xl bg-slate-950/80 border border-slate-800 hover:border-slate-700 transition-all flex flex-col lg:flex-row items-start lg:items-center justify-between gap-5 shadow-lg"
+                        >
+                          {/* Property & Schedule Info */}
+                          <div className="flex items-start gap-4 min-w-0 flex-1">
+                            <img
+                              src={primaryImg}
+                              alt={prop?.title || 'Property'}
+                              className="w-20 h-20 rounded-xl object-cover border border-slate-800 shrink-0"
+                            />
+                            <div className="min-w-0 space-y-1">
+                              <div className="flex items-center gap-2 flex-wrap">
+                                {prop?.slug ? (
+                                  <Link
+                                    to={`/properties/${prop.slug}`}
+                                    className="font-bold text-white hover:text-amber-400 text-sm sm:text-base transition-colors truncate"
+                                  >
+                                    {prop.title}
+                                  </Link>
+                                ) : (
+                                  <span className="font-bold text-white text-sm sm:text-base truncate">
+                                    {prop?.title || 'Property Listing'}
+                                  </span>
+                                )}
+                                {prop?.formatted_price && (
+                                  <span className="text-xs font-mono font-bold text-amber-400 bg-amber-400/10 px-2 py-0.5 rounded-md border border-amber-400/20">
+                                    {prop.formatted_price}
+                                  </span>
+                                )}
+                              </div>
+
+                              <div className="flex items-center gap-3 text-xs text-amber-300 font-semibold flex-wrap">
+                                <span>📅 Date: {formatDate(app.date)}</span>
+                                <span>⏰ Time: {app.time_slot || '11:00 AM'}</span>
+                              </div>
+
+                              {app.notes && (
+                                <p className="text-xs text-slate-400 italic bg-slate-900/80 px-2.5 py-1 rounded-lg border border-slate-800/80 mt-1">
+                                  Notes: {app.notes}
+                                </p>
+                              )}
+                            </div>
+                          </div>
+
+                          {/* Assigned Agent Box (HIGHLIGHTED!) */}
+                          <div className="p-3 rounded-xl bg-slate-900 border border-slate-800 shrink-0 space-y-1 min-w-[210px] w-full sm:w-auto">
+                            <span className="text-[10px] uppercase font-bold text-amber-400/90 block tracking-wider">
+                              Assigned Agent
+                            </span>
+                            <div className="flex items-center gap-2.5">
+                              <img
+                                src={
+                                  agent?.avatar ||
+                                  'https://images.unsplash.com/photo-1560250097-0b93528c311a?auto=format&fit=crop&q=80&w=100'
+                                }
+                                alt={agent?.name || 'Agent'}
+                                className="w-9 h-9 rounded-full object-cover border border-amber-400/50 shrink-0"
+                              />
+                              <div className="min-w-0">
+                                <p className="text-xs font-bold text-white truncate">{agent?.name || 'Unassigned'}</p>
+                                <p className="text-[11px] text-slate-400 truncate">{agent?.agency_name || 'DVS Realty'}</p>
+                              </div>
+                            </div>
+                          </div>
+
+                          {/* Client Info */}
+                          <div className="space-y-0.5 text-xs text-slate-400 shrink-0 min-w-[170px] w-full sm:w-auto">
+                            <span className="text-[10px] uppercase font-bold text-slate-500 block tracking-wider">
+                              Client Info
+                            </span>
+                            <p className="font-semibold text-white">{app.name}</p>
+                            <p className="text-[11px]">{app.email}</p>
+                            <p className="text-[11px] text-slate-500">{app.phone}</p>
+                          </div>
+
+                          {/* Status & Actions */}
+                          <div className="shrink-0 space-y-1.5 w-full sm:w-auto">
+                            <span className="text-[10px] uppercase font-bold text-slate-500 block tracking-wider">
+                              Walkthrough Status
+                            </span>
+                            <CustomSelect
+                              value={app.status}
+                              onChange={(val) => handleAppointmentStatusChange(app.id, val)}
+                              options={[
+                                { value: 'pending', label: 'Pending' },
+                                { value: 'confirmed', label: 'Confirmed' },
+                                { value: 'completed', label: 'Completed' },
+                                { value: 'cancelled', label: 'Cancelled' },
+                              ]}
+                              variant="compact"
+                              className="w-36"
+                            />
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                ) : (
+                  <div className="p-8 rounded-2xl bg-slate-950/60 border border-slate-800 text-center text-slate-400">
+                    No visit appointments match your filter criteria.
+                  </div>
+                )}
+              </div>
             </div>
           )}
 
@@ -1945,6 +2283,326 @@ export default function Admin() {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* VIEW APPOINTMENT DETAILS MODAL */}
+      {viewingAppointment && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-in fade-in">
+          <div className="bg-slate-900 border border-slate-800 rounded-3xl max-w-xl w-full p-6 sm:p-8 space-y-6 shadow-2xl relative max-h-[90vh] overflow-y-auto">
+            {/* Modal Header */}
+            <div className="flex items-center justify-between border-b border-slate-800 pb-4">
+              <div className="flex items-center gap-2.5">
+                <div className="w-10 h-10 rounded-xl bg-purple-500/10 border border-purple-500/30 text-purple-400 flex items-center justify-center shrink-0">
+                  <CalendarCheck className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 className="text-lg font-bold text-white">Visit Appointment #{viewingAppointment.id}</h3>
+                  <p className="text-xs text-slate-400">Scheduled Private Walkthrough</p>
+                </div>
+              </div>
+              <button
+                onClick={() => setViewingAppointment(null)}
+                className="p-1.5 rounded-xl text-slate-400 hover:text-white hover:bg-slate-800 transition-colors cursor-pointer"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Property Summary Box */}
+            {viewingAppointment.property && (
+              <div className="p-4 rounded-2xl bg-slate-950/80 border border-slate-800 flex items-center gap-4">
+                <img
+                  src={
+                    viewingAppointment.property.primary_image ||
+                    (viewingAppointment.property.images && viewingAppointment.property.images.length > 0
+                      ? viewingAppointment.property.images[0].image_path
+                      : 'https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?auto=format&fit=crop&q=80&w=400')
+                  }
+                  alt={viewingAppointment.property.title}
+                  className="w-16 h-16 rounded-xl object-cover border border-slate-800 shrink-0"
+                />
+                <div className="min-w-0 space-y-1">
+                  <Link
+                    to={`/properties/${viewingAppointment.property.slug}`}
+                    className="font-bold text-white hover:text-amber-400 text-sm transition-colors block truncate"
+                  >
+                    {viewingAppointment.property.title}
+                  </Link>
+                  <p className="text-xs text-amber-400 font-mono font-bold">
+                    {viewingAppointment.property.formatted_price || `₹ ${viewingAppointment.property.price}`}
+                  </p>
+                  <p className="text-[11px] text-slate-400 truncate">
+                    {viewingAppointment.property.address || 'Ahmedabad, Gujarat'}
+                  </p>
+                </div>
+              </div>
+            )}
+
+            {/* Assigned Agent Box */}
+            <div className="p-4 rounded-2xl bg-slate-950/80 border border-slate-800 space-y-2">
+              <span className="text-[10px] uppercase font-bold text-amber-400/90 tracking-wider block">
+                Assigned Real Estate Agent
+              </span>
+              <div className="flex items-center gap-3">
+                <img
+                  src={
+                    viewingAppointment.agent?.avatar ||
+                    'https://images.unsplash.com/photo-1560250097-0b93528c311a?auto=format&fit=crop&q=80&w=200'
+                  }
+                  alt={viewingAppointment.agent?.name || 'Agent'}
+                  className="w-12 h-12 rounded-full object-cover border-2 border-amber-400/50 shrink-0 shadow-md"
+                />
+                <div className="min-w-0 space-y-0.5">
+                  <p className="text-sm font-bold text-white truncate">
+                    {viewingAppointment.agent?.name || 'Unassigned Agent'}
+                  </p>
+                  <p className="text-xs text-amber-400 font-semibold truncate">
+                    {viewingAppointment.agent?.agency_name || 'DVS Realty Exclusive'}
+                  </p>
+                  {viewingAppointment.agent?.email && (
+                    <p className="text-[11px] text-slate-400 truncate">
+                      {viewingAppointment.agent.email} • {viewingAppointment.agent.phone || 'No direct phone'}
+                    </p>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            {/* Client Info Grid */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="p-4 rounded-2xl bg-slate-950/80 border border-slate-800 space-y-1">
+                <span className="text-[10px] uppercase font-bold text-slate-500 tracking-wider block">
+                  Client Information
+                </span>
+                <p className="text-xs font-bold text-white">{viewingAppointment.name}</p>
+                <p className="text-[11px] text-slate-400">{viewingAppointment.email}</p>
+                <p className="text-[11px] text-slate-400">{viewingAppointment.phone}</p>
+              </div>
+
+              <div className="p-4 rounded-2xl bg-slate-950/80 border border-slate-800 space-y-2">
+                <span className="text-[10px] uppercase font-bold text-amber-400 tracking-wider block">
+                  Reschedule Date & Time
+                </span>
+                <div className="space-y-2">
+                  <CustomDatePicker
+                    value={viewingAppointment.date ? viewingAppointment.date.split('T')[0] : ''}
+                    onChange={(newDate) => {
+                      handleAppointmentStatusChange(viewingAppointment.id, viewingAppointment.status, { date: newDate });
+                      setViewingAppointment((prev) => (prev ? { ...prev, date: newDate } : null));
+                    }}
+                  />
+                  <CustomSelect
+                    value={viewingAppointment.time_slot || '11:00 AM'}
+                    onChange={(newTime) => {
+                      handleAppointmentStatusChange(viewingAppointment.id, viewingAppointment.status, { time_slot: newTime });
+                      setViewingAppointment((prev) => (prev ? { ...prev, time_slot: newTime } : null));
+                    }}
+                    options={[
+                      { value: '09:00 AM', label: '09:00 AM' },
+                      { value: '10:00 AM', label: '10:00 AM' },
+                      { value: '11:00 AM', label: '11:00 AM' },
+                      { value: '12:00 PM', label: '12:00 PM' },
+                      { value: '02:00 PM', label: '02:00 PM' },
+                      { value: '04:00 PM', label: '04:00 PM' },
+                      { value: '06:00 PM', label: '06:00 PM' },
+                    ]}
+                    variant="compact"
+                    direction="up"
+                  />
+                </div>
+              </div>
+            </div>
+
+            {viewingAppointment.notes && (
+              <div className="p-4 rounded-2xl bg-slate-950/80 border border-slate-800 space-y-1">
+                <span className="text-[10px] uppercase font-bold text-slate-500 tracking-wider block">
+                  Special Notes & Preferences
+                </span>
+                <p className="text-xs text-slate-300 italic">{viewingAppointment.notes}</p>
+              </div>
+            )}
+
+            {/* Status Update Form */}
+            <div className="pt-2 flex flex-col sm:flex-row items-center justify-between gap-4 border-t border-slate-800">
+              <div className="w-full sm:w-auto space-y-1">
+                <span className="text-[10px] uppercase font-bold text-slate-500 tracking-wider block">
+                  Change Appointment Status
+                </span>
+                <CustomSelect
+                  value={viewingAppointment.status}
+                  onChange={(val) => {
+                    handleAppointmentStatusChange(viewingAppointment.id, val);
+                    setViewingAppointment((prev) => (prev ? { ...prev, status: val as any } : null));
+                  }}
+                  options={[
+                    { value: 'pending', label: 'Pending' },
+                    { value: 'confirmed', label: 'Confirmed' },
+                    { value: 'completed', label: 'Completed' },
+                    { value: 'cancelled', label: 'Cancelled' },
+                  ]}
+                  variant="compact"
+                  direction="up"
+                  className="w-44"
+                />
+              </div>
+
+              <button
+                onClick={() => setViewingAppointment(null)}
+                className="w-full sm:w-auto px-5 py-2.5 rounded-xl bg-slate-800 text-slate-200 text-xs font-bold hover:bg-slate-700 transition-colors cursor-pointer"
+              >
+                Close Modal
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* VIEW INQUIRY DETAILS MODAL */}
+      {viewingEnquiry && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-in fade-in">
+          <div className="bg-slate-900 border border-slate-800 rounded-3xl max-w-xl w-full p-6 sm:p-8 space-y-6 shadow-2xl relative max-h-[90vh] overflow-y-auto">
+            {/* Modal Header */}
+            <div className="flex items-center justify-between border-b border-slate-800 pb-4">
+              <div className="flex items-center gap-2.5">
+                <div className="w-10 h-10 rounded-xl bg-blue-500/10 border border-blue-500/30 text-blue-400 flex items-center justify-center shrink-0">
+                  <FileText className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 className="text-lg font-bold text-white">Property Inquiry #{viewingEnquiry.id}</h3>
+                  <p className="text-xs text-slate-400">Customer Lead Inquiry Details</p>
+                </div>
+              </div>
+              <button
+                onClick={() => setViewingEnquiry(null)}
+                className="p-1.5 rounded-xl text-slate-400 hover:text-white hover:bg-slate-800 transition-colors cursor-pointer"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Property Summary Box */}
+            {viewingEnquiry.property && (
+              <div className="p-4 rounded-2xl bg-slate-950/80 border border-slate-800 flex items-center gap-4">
+                <img
+                  src={
+                    viewingEnquiry.property.primary_image ||
+                    (viewingEnquiry.property.images && viewingEnquiry.property.images.length > 0
+                      ? viewingEnquiry.property.images[0].image_path
+                      : 'https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?auto=format&fit=crop&q=80&w=400')
+                  }
+                  alt={viewingEnquiry.property.title}
+                  className="w-16 h-16 rounded-xl object-cover border border-slate-800 shrink-0"
+                />
+                <div className="min-w-0 space-y-1">
+                  <Link
+                    to={`/properties/${viewingEnquiry.property.slug}`}
+                    className="font-bold text-white hover:text-amber-400 text-sm transition-colors block truncate"
+                  >
+                    {viewingEnquiry.property.title}
+                  </Link>
+                  <p className="text-xs text-amber-400 font-mono font-bold">
+                    {viewingEnquiry.property.formatted_price || `₹ ${viewingEnquiry.property.price}`}
+                  </p>
+                  <p className="text-[11px] text-slate-400 truncate">
+                    {viewingEnquiry.property.address || 'Ahmedabad, Gujarat'}
+                  </p>
+                </div>
+              </div>
+            )}
+
+            {/* Assigned Agent Box */}
+            <div className="p-4 rounded-2xl bg-slate-950/80 border border-slate-800 space-y-2">
+              <span className="text-[10px] uppercase font-bold text-amber-400/90 tracking-wider block">
+                Assigned Real Estate Agent
+              </span>
+              <div className="flex items-center gap-3">
+                <img
+                  src={
+                    (viewingEnquiry.agent || viewingEnquiry.property?.agent)?.avatar ||
+                    'https://images.unsplash.com/photo-1560250097-0b93528c311a?auto=format&fit=crop&q=80&w=200'
+                  }
+                  alt={(viewingEnquiry.agent || viewingEnquiry.property?.agent)?.name || 'Agent'}
+                  className="w-12 h-12 rounded-full object-cover border-2 border-amber-400/50 shrink-0 shadow-md"
+                />
+                <div className="min-w-0 space-y-0.5">
+                  <p className="text-sm font-bold text-white truncate">
+                    {(viewingEnquiry.agent || viewingEnquiry.property?.agent)?.name || 'Concierge Desk'}
+                  </p>
+                  <p className="text-xs text-amber-400 font-semibold truncate">
+                    {(viewingEnquiry.agent || viewingEnquiry.property?.agent)?.agency_name || 'DVS Realty Sales Team'}
+                  </p>
+                  {(viewingEnquiry.agent || viewingEnquiry.property?.agent)?.email && (
+                    <p className="text-[11px] text-slate-400 truncate">
+                      {(viewingEnquiry.agent || viewingEnquiry.property?.agent)?.email} • {(viewingEnquiry.agent || viewingEnquiry.property?.agent)?.phone || 'No direct phone'}
+                    </p>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            {/* Client Info Grid */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="p-4 rounded-2xl bg-slate-950/80 border border-slate-800 space-y-1">
+                <span className="text-[10px] uppercase font-bold text-slate-500 tracking-wider block">
+                  Client Information
+                </span>
+                <p className="text-xs font-bold text-white">{viewingEnquiry.name}</p>
+                <p className="text-[11px] text-slate-400">{viewingEnquiry.email}</p>
+                <p className="text-[11px] text-slate-400">{viewingEnquiry.phone || 'No phone provided'}</p>
+              </div>
+
+              <div className="p-4 rounded-2xl bg-slate-950/80 border border-slate-800 space-y-1">
+                <span className="text-[10px] uppercase font-bold text-slate-500 tracking-wider block">
+                  Submission Date
+                </span>
+                <p className="text-xs font-bold text-slate-300">
+                  📅 {viewingEnquiry.created_at ? formatDate(viewingEnquiry.created_at) : 'Recent Inquiry'}
+                </p>
+              </div>
+            </div>
+
+            {/* Message Body */}
+            <div className="p-4 rounded-2xl bg-slate-950/80 border border-slate-800 space-y-1">
+              <span className="text-[10px] uppercase font-bold text-slate-500 tracking-wider block">
+                Inquiry Message
+              </span>
+              <p className="text-xs text-slate-300 leading-relaxed whitespace-pre-line">
+                {viewingEnquiry.message || 'No message attached.'}
+              </p>
+            </div>
+
+            {/* Status Update Form */}
+            <div className="pt-2 flex flex-col sm:flex-row items-center justify-between gap-4 border-t border-slate-800">
+              <div className="w-full sm:w-auto space-y-1">
+                <span className="text-[10px] uppercase font-bold text-slate-500 tracking-wider block">
+                  Update Lead Status
+                </span>
+                <CustomSelect
+                  value={viewingEnquiry.status}
+                  onChange={(val) => {
+                    handleEnquiryStatusChange(viewingEnquiry.id, val);
+                    setViewingEnquiry((prev) => (prev ? { ...prev, status: val as any } : null));
+                  }}
+                  options={[
+                    { value: 'new', label: 'New Lead' },
+                    { value: 'contact_in_progress', label: 'In Progress' },
+                    { value: 'resolved', label: 'Resolved' },
+                  ]}
+                  variant="compact"
+                  direction="up"
+                  className="w-44"
+                />
+              </div>
+
+              <button
+                onClick={() => setViewingEnquiry(null)}
+                className="w-full sm:w-auto px-5 py-2.5 rounded-xl bg-slate-800 text-slate-200 text-xs font-bold hover:bg-slate-700 transition-colors cursor-pointer"
+              >
+                Close Modal
+              </button>
+            </div>
           </div>
         </div>
       )}

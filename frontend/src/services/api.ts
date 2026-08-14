@@ -245,10 +245,25 @@ export async function updateEnquiryStatus(id: number, status: string): Promise<a
   });
 }
 
-export async function updateAppointmentStatus(id: number, status: string): Promise<any> {
-  return fetchApi<any>(`/admin/appointments/${id}`, {
+export async function getAdminAppointments(params: Record<string, any> = {}): Promise<{ data: Appointment[] }> {
+  const query = new URLSearchParams();
+  Object.entries(params).forEach(([key, val]) => {
+    if (val !== undefined && val !== null && val !== '') {
+      query.append(key, String(val));
+    }
+  });
+  const queryString = query.toString() ? `?${query.toString()}` : '';
+  return fetchApi<{ data: Appointment[] }>(`/admin/appointments${queryString}`);
+}
+
+export async function updateAppointmentStatus(
+  id: number,
+  status?: string,
+  extra?: { date?: string; time_slot?: string; notes?: string }
+): Promise<any> {
+  return fetchApi<any>(`/appointments/${id}`, {
     method: 'PATCH',
-    body: JSON.stringify({ status }),
+    body: JSON.stringify({ status, ...extra }),
   });
 }
 

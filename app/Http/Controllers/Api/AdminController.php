@@ -29,8 +29,8 @@ class AdminController extends Controller
                 'total_enquiries' => Enquiry::count(),
                 'total_appointments' => Appointment::count(),
             ],
-            'recent_enquiries' => Enquiry::with(['property', 'agent'])->orderBy('id', 'desc')->take(5)->get(),
-            'recent_appointments' => Appointment::with(['property'])->orderBy('id', 'desc')->take(5)->get(),
+            'recent_enquiries' => Enquiry::with(['property.images', 'property.location', 'agent', 'user'])->orderBy('id', 'desc')->take(5)->get(),
+            'recent_appointments' => Appointment::with(['property.images', 'property.location', 'agent', 'user'])->orderBy('id', 'desc')->take(5)->get(),
         ]);
     }
 
@@ -53,12 +53,15 @@ class AdminController extends Controller
     public function updateAppointmentStatus(Request $request, int $id)
     {
         $validated = $request->validate([
-            'status' => ['required', 'in:pending,confirmed,cancelled,completed'],
+            'status' => ['nullable', 'in:pending,confirmed,cancelled,completed'],
+            'date' => ['nullable', 'date'],
+            'time_slot' => ['nullable', 'string'],
             'notes' => ['nullable', 'string'],
         ]);
 
         $appointment = Appointment::findOrFail($id);
-        $appointment->update($validated);
+        $appointment->update(array_filter($validated, fn($val) => !is_null($val)));
+        $appointment->load(['property.images', 'property.location', 'agent', 'user']);
 
         return response()->json([
             'message' => 'Appointment status updated successfully',
@@ -86,6 +89,33 @@ class AdminController extends Controller
             'message' => 'Property featured state toggled',
             'is_featured' => $property->is_featured,
         ]);
+    }
+
+    public function appointmentsList(Request $request)
+    {
+        $query = Appointment::with(['property.images', 'property.location', 'agent', 'user']);
+
+        if ($request->filled('status')) {
+            $query->where('status', $request->input('status'));
+        }
+
+        if ($request->filled('agent_id')) {
+            $query->where('agent_id', $request->input('agent_id'));
+        }
+
+        if ($request->filled('q')) {
+            $q = $request->input('q');
+            $query->where(function ($sub) use ($q) {
+                $sub->where('name', 'like', "%{$q}%")
+                    ->orWhere('email', 'like', "%{$q}%")
+                    ->orWhere('phone', 'like', "%{$q}%")
+                    ->orWhereHas('property', fn($p) => $p->where('title', 'like', "%{$q}%"))
+                    ->orWhereHas('agent', fn($a) => $a->where('name', 'like', "%{$q}%"));
+            });
+        }
+
+        $appointments = $query->orderBy('id', 'desc')->get();
+        return response()->json(['data' => $appointments]);
     }
 
     public function usersList()

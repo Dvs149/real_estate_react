@@ -12,7 +12,7 @@ class AppointmentController extends Controller
     public function index(Request $request)
     {
         $user = $request->user();
-        $query = Appointment::with(['property.images', 'agent']);
+        $query = Appointment::with(['property.images', 'property.location', 'agent']);
 
         if (!$user->isAdmin()) {
             if ($user->isAgent() && $user->agentProfile) {
@@ -51,5 +51,30 @@ class AppointmentController extends Controller
             'message' => 'Property visit appointment booked successfully! The designated agent will reach out to confirm.',
             'data' => $appointment,
         ], 201);
+    }
+
+    public function update(Request $request, int $id)
+    {
+        $user = $request->user();
+        $appointment = Appointment::findOrFail($id);
+
+        if (!$user->isAdmin() && $appointment->agent_id !== $user->agentProfile?->id && $appointment->user_id !== $user->id) {
+            return response()->json(['message' => 'Unauthorized to update this appointment'], 403);
+        }
+
+        $validated = $request->validate([
+            'date' => ['nullable', 'date'],
+            'time_slot' => ['nullable', 'string'],
+            'status' => ['nullable', 'in:pending,confirmed,completed,cancelled'],
+            'notes' => ['nullable', 'string'],
+        ]);
+
+        $appointment->update(array_filter($validated, fn($val) => !is_null($val)));
+        $appointment->load(['property.images', 'property.location', 'agent', 'user']);
+
+        return response()->json([
+            'message' => 'Appointment updated successfully!',
+            'data' => $appointment,
+        ]);
     }
 }
