@@ -182,9 +182,17 @@ export async function getUserAppointments(): Promise<{ data: Appointment[] }> {
   return fetchApi<{ data: Appointment[] }>('/appointments');
 }
 
-// CMS APIs
-export async function getBlogs(): Promise<{ data: Blog[] }> {
-  return fetchApi<{ data: Blog[] }>('/blogs');
+export async function getBlogs(params?: Record<string, any>): Promise<{ data: Blog[] }> {
+  const query = new URLSearchParams();
+  if (params) {
+    Object.entries(params).forEach(([key, val]) => {
+      if (val !== undefined && val !== null && val !== '') {
+        query.append(key, String(val));
+      }
+    });
+  }
+  const queryString = query.toString() ? `?${query.toString()}` : '';
+  return fetchApi<{ data: Blog[] }>(`/blogs${queryString}`);
 }
 
 export async function getBlogBySlug(slug: string): Promise<{ data: Blog }> {

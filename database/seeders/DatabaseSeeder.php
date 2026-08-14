@@ -788,34 +788,137 @@ class DatabaseSeeder extends Seeder
             'notes' => 'Client requested VIP coffee setup.',
         ]);
 
-        // 8. Seed Blog Categories & Blogs
+        // 8. Seed Blog Categories & 50 Articles
         $catMarket = BlogCategory::create(['name' => 'Market Insights', 'slug' => 'market-insights']);
         $catGuide = BlogCategory::create(['name' => 'Buyer Guides', 'slug' => 'buyer-guides']);
         $catArchitecture = BlogCategory::create(['name' => 'Architecture & Design', 'slug' => 'architecture-design']);
+        $catInvestment = BlogCategory::create(['name' => 'Investment Strategies', 'slug' => 'investment-strategies']);
+        $catLifestyle = BlogCategory::create(['name' => 'Luxury Lifestyle', 'slug' => 'luxury-lifestyle']);
+        $catLegal = BlogCategory::create(['name' => 'Legal & Tax Advisory', 'slug' => 'legal-tax-advisory']);
 
-        Blog::create([
-            'blog_category_id' => $catMarket->id,
-            'title' => 'Real Estate Trends 2026: Why High-End Penthouses are Outperforming Metro Markets',
-            'slug' => 'real-estate-trends-2026-penthouses-market',
-            'excerpt' => 'An in-depth analysis of capital appreciation, luxury buyer sentiment, and rental yield trajectories in tier-1 Indian metros.',
-            'content' => 'The luxury residential real estate market across India has witnessed unprecedented demand in 2026. High-net-worth individuals and NRI investors are increasingly prioritizing spacious sky villas and sustainable smart residences over traditional landed properties...',
-            'image' => 'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&q=80&w=1200',
-            'author_name' => 'DVS Research Desk',
-            'is_published' => true,
-            'published_at' => now(),
-        ]);
+        $blogCategories = [$catMarket, $catGuide, $catArchitecture, $catInvestment, $catLifestyle, $catLegal];
 
-        Blog::create([
-            'blog_category_id' => $catGuide->id,
-            'title' => 'The Ultimate Checklist for Purchasing a Luxury Property in Ahmedabad',
-            'slug' => 'ultimate-checklist-purchasing-luxury-property-ahmedabad',
-            'excerpt' => 'Navigating title verification, RERA compliance, structural audits, and neighborhood valuation for prime locations like Sindhu Bhavan and Bodakdev.',
-            'content' => 'Buying a luxury home requires strategic diligence beyond aesthetic appreciation. Key factors include RERA registration check, legal title history, builder reputation, maintenance index, and proximity to major commercial corridors...',
-            'image' => 'https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?auto=format&fit=crop&q=80&w=1200',
-            'author_name' => 'Rajesh Verma',
-            'is_published' => true,
-            'published_at' => now()->subDays(5),
-        ]);
+        $authorsPool = [
+            'DVS Research Desk', 'Rajesh Verma', 'Ananya Sharma', 'Vikramaditya Singh',
+            'Priya Patel', 'Rohan Gupta', 'Kavita Mehta', 'Aditya Deshmukh'
+        ];
+
+        $blogImages = [
+            'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&q=80&w=1200',
+            'https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?auto=format&fit=crop&q=80&w=1200',
+            'https://images.unsplash.com/photo-1600607687939-ce8a6c25118c?auto=format&fit=crop&q=80&w=1200',
+            'https://images.unsplash.com/photo-1512917774080-9991f1c4c750?auto=format&fit=crop&q=80&w=1200',
+            'https://images.unsplash.com/photo-1600573472591-ee6c563aaec9?auto=format&fit=crop&q=80&w=1200',
+            'https://images.unsplash.com/photo-1613977257363-707ba9348227?auto=format&fit=crop&q=80&w=1200',
+            'https://images.unsplash.com/photo-1497366216548-37526070297c?auto=format&fit=crop&q=80&w=1200',
+            'https://images.unsplash.com/photo-1600566753190-17f0baa2a6c3?auto=format&fit=crop&q=80&w=1200',
+            'https://images.unsplash.com/photo-1564013799919-ab600027ffc6?auto=format&fit=crop&q=80&w=1200',
+            'https://images.unsplash.com/photo-1502672260266-1c1ef2d93688?auto=format&fit=crop&q=80&w=1200',
+        ];
+
+        $blogTopics = [
+            [
+                'cat' => $catMarket,
+                'title' => 'Real Estate Trends 2026: Why High-End Penthouses are Outperforming Metro Markets',
+                'excerpt' => 'An in-depth analysis of capital appreciation, luxury buyer sentiment, and rental yield trajectories in tier-1 Indian metros.',
+            ],
+            [
+                'cat' => $catGuide,
+                'title' => 'The Ultimate Checklist for Purchasing a Luxury Property in Ahmedabad',
+                'excerpt' => 'Navigating title verification, RERA compliance, structural audits, and neighborhood valuation for prime locations like Sindhu Bhavan and Bodakdev.',
+            ],
+            [
+                'cat' => $catInvestment,
+                'title' => 'High-Yield Commercial Corridors: BKC Mumbai vs Financial District Hyderabad',
+                'excerpt' => 'Comparative rental yield, occupancy index, and long-term capital appreciation breakdown for corporate real estate investors.',
+            ],
+            [
+                'cat' => $catArchitecture,
+                'title' => 'Biophilic Design in Luxury Living: Integrating Nature into High-Rise Residences',
+                'excerpt' => 'How vertical gardens, natural light optimization, and acoustic glass panels elevate modern luxury apartment wellness.',
+            ],
+            [
+                'cat' => $catLifestyle,
+                'title' => 'Designing Private Resort-Style Infinity Pools for Oceanfront Beach Estates',
+                'excerpt' => 'Architectural considerations for structural weight loads, saltwater filtration, and outdoor heating in luxury Goan villas.',
+            ],
+            [
+                'cat' => $catLegal,
+                'title' => 'Understanding Section 54 Capital Gains Tax Exemptions for Property Reinvestment',
+                'excerpt' => 'Legal framework, timelines, and strategy for high-net-worth sellers looking to save tax when acquiring secondary luxury homes.',
+            ],
+            [
+                'cat' => $catMarket,
+                'title' => 'NRI Real Estate Inflows 2026: Why Dubai and US Investors Are Buying Metro Sky Villas',
+                'excerpt' => 'Currency dynamics, repatriation rules, and prime asset preferences driving non-resident Indian property investments.',
+            ],
+            [
+                'cat' => $catArchitecture,
+                'title' => 'Smart Home Automation Standards for 2026 Luxury Residences',
+                'excerpt' => 'KNX integration, voice-controlled lighting scenes, biometric access control, and energy management systems explained.',
+            ],
+            [
+                'cat' => $catGuide,
+                'title' => 'Evaluating Builder Credibility and Construction Standards Before Pre-Booking',
+                'excerpt' => 'Key metrics for assessing financial health, track record, delivery timelines, and structural warranties of top-tier developers.',
+            ],
+            [
+                'cat' => $catInvestment,
+                'title' => 'Fractional Ownership in Grade-A Real Estate: Opportunities and Risks',
+                'excerpt' => 'How fractional asset platforms operate, liquidity options, regulatory oversight, and target yield calculations.',
+            ],
+        ];
+
+        // Seed initial curated topics
+        foreach ($blogTopics as $bTopic) {
+            Blog::create([
+                'blog_category_id' => $bTopic['cat']->id,
+                'title' => $bTopic['title'],
+                'slug' => Str::slug($bTopic['title']),
+                'excerpt' => $bTopic['excerpt'],
+                'content' => $bTopic['excerpt'] . " In recent years, premium real estate has transformed into a resilient wealth preservation asset class. Buyers and institutional investors prioritize transparent title verification, prime location connectivity, sustainable design, and high resale liquidity. As market dynamics continue to evolve, staying updated with structural trends remains paramount for maximizing returns...",
+                'image' => $blogImages[array_rand($blogImages)],
+                'author_name' => $authorsPool[array_rand($authorsPool)],
+                'is_published' => true,
+                'published_at' => now()->subDays(rand(1, 60)),
+            ]);
+        }
+
+        // Generate additional articles to reach 50 blog posts
+        $topicPrefixes = [
+            '2026 Executive Briefing:', 'Strategic Guide:', 'Architectural Spotlight:', 'The Future of Real Estate:',
+            'Insider Perspective:', 'Market Forecast:', 'Legal Insights:', 'Investor Analysis:'
+        ];
+
+        $topicSubjects = [
+            'Waterfront Luxury Living Standards', 'Penthouse Interior Aesthetics', 'Sustainable Green Building Certificates',
+            'Commercial Lease Structuring', 'Gated Villa Security Protocols', 'High-Rise Soundproofing Engineering',
+            'Evaluating Land Appraisal Ratios', 'Smart Kitchen & Bath Automation', 'Solar Powered Residential Communities'
+        ];
+
+        $topicCities = ['Ahmedabad', 'Mumbai', 'Bangalore', 'Goa', 'Gurgaon', 'Pune', 'Hyderabad'];
+
+        for ($b = 11; $b <= 50; $b++) {
+            $cat = $blogCategories[array_rand($blogCategories)];
+            $prefix = $topicPrefixes[array_rand($topicPrefixes)];
+            $subject = $topicSubjects[array_rand($topicSubjects)];
+            $city = $topicCities[array_rand($topicCities)];
+
+            $title = "{$prefix} {$subject} in {$city}";
+            $slug = Str::slug("{$title}-{$b}");
+
+            Blog::create([
+                'blog_category_id' => $cat->id,
+                'title' => $title,
+                'slug' => $slug,
+                'excerpt' => "Explore critical market insights regarding {$subject} in {$city}. Key considerations for buyers, investors, and architectural enthusiasts.",
+                'content' => "Exploring {$subject} in {$city} reveals rapid transformation in urban luxury living. Demand for high-quality construction, smart home technology, and prime location access continues to set new market benchmarks. Discerning buyers should focus on developer reputation, RERA compliance, and long-term resale potential...",
+                'image' => $blogImages[($b - 1) % count($blogImages)],
+                'author_name' => $authorsPool[array_rand($authorsPool)],
+                'is_published' => true,
+                'published_at' => now()->subDays(rand(1, 90)),
+            ]);
+        }
 
         // 9. Seed Testimonials & FAQs
         Testimonial::create([

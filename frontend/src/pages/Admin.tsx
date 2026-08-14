@@ -60,6 +60,12 @@ import {
   Newspaper,
   Video,
   Search,
+  Calendar,
+  Clock,
+  User as UserIcon,
+  Mail,
+  Phone,
+  Check,
 } from 'lucide-react';
 
 export default function Admin() {
@@ -1218,48 +1224,79 @@ export default function Admin() {
 
           {/* LEADS TAB */}
           {activeTab === 'leads' && (
-            <div className="bg-slate-900 border border-slate-800 rounded-3xl p-6 space-y-4 shadow-xl overflow-x-auto">
-              <h2 className="text-xl font-bold text-white flex items-center gap-2 mb-4">
-                <FileText className="w-5 h-5 text-blue-400" />
-                Customer Leads & Inquiries
-              </h2>
-              <table className="w-full text-left text-xs text-slate-300">
-                <thead className="bg-slate-950 text-slate-400 uppercase text-[10px] font-bold tracking-wider">
-                  <tr>
-                    <th className="p-3">Client Name</th>
-                    <th className="p-3">Contact</th>
-                    <th className="p-3">Property</th>
-                    <th className="p-3">Message</th>
-                    <th className="p-3">Status</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-800">
-                  {enquiries.map((enq) => (
-                    <tr key={enq.id} className="hover:bg-slate-800/40">
-                      <td className="p-3 font-semibold text-white">{enq.name}</td>
-                      <td className="p-3 text-slate-400">
-                        <p>{enq.email}</p>
-                        <p className="text-[10px] text-slate-500">{enq.phone}</p>
-                      </td>
-                      <td className="p-3 text-amber-400">{enq.property?.title || 'General Enquiry'}</td>
-                      <td className="p-3 text-slate-400 max-w-[200px] truncate">{enq.message}</td>
-                      <td className="p-3">
-                        <CustomSelect
-                          value={enq.status}
-                          onChange={(val) => handleEnquiryStatusChange(enq.id, val)}
-                          options={[
-                            { value: 'new', label: 'New Lead' },
-                            { value: 'contact_in_progress', label: 'In Progress' },
-                            { value: 'resolved', label: 'Resolved' },
-                          ]}
-                          variant="compact"
-                          className="w-36"
-                        />
-                      </td>
+            <div className="bg-slate-900 border border-slate-800 rounded-3xl p-6 sm:p-8 space-y-6 shadow-xl">
+              <div className="flex items-center justify-between border-b border-slate-800 pb-4">
+                <div>
+                  <h2 className="text-xl font-bold text-white flex items-center gap-2">
+                    <FileText className="w-5 h-5 text-blue-400" />
+                    Customer Leads & Inquiries
+                  </h2>
+                  <p className="text-xs text-slate-400 mt-1">
+                    Review incoming buyer & seller inquiries, contact details, and update lead resolution statuses.
+                  </p>
+                </div>
+              </div>
+
+              <div className="overflow-x-auto pb-4">
+                <table className="w-full text-left text-xs text-slate-300">
+                  <thead className="bg-slate-950 text-slate-400 uppercase text-[10px] font-bold tracking-wider">
+                    <tr>
+                      <th className="p-3.5 rounded-l-xl">Client Name</th>
+                      <th className="p-3.5">Contact Details</th>
+                      <th className="p-3.5">Interested Property</th>
+                      <th className="p-3.5">Lead Status</th>
+                      <th className="p-3.5 text-right rounded-r-xl">Actions</th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
+                  </thead>
+                  <tbody className="divide-y divide-slate-800/80">
+                    {enquiries.map((enq) => (
+                      <tr key={enq.id} className="hover:bg-slate-800/50 transition-colors group">
+                        <td
+                          className="p-3.5 font-bold text-white group-hover:text-amber-400 cursor-pointer transition-colors"
+                          onClick={() => setViewingEnquiry(enq)}
+                        >
+                          <div className="flex items-center gap-2">
+                            <div className="w-7 h-7 rounded-full bg-amber-400/10 text-amber-400 font-bold flex items-center justify-center text-xs border border-amber-400/20 shrink-0">
+                              {enq.name.charAt(0)}
+                            </div>
+                            <span className="truncate">{enq.name}</span>
+                          </div>
+                        </td>
+                        <td className="p-3.5 text-slate-400">
+                          <p className="font-semibold text-slate-200">{enq.email}</p>
+                          <p className="text-[11px] text-slate-500">{enq.phone || 'No phone'}</p>
+                        </td>
+                        <td className="p-3.5 text-amber-400 font-semibold max-w-[240px] truncate">
+                          {enq.property?.title || 'General Property Inquiry'}
+                        </td>
+                        <td className="p-3.5">
+                          <CustomSelect
+                            value={enq.status}
+                            onChange={(val) => handleEnquiryStatusChange(enq.id, val)}
+                            options={[
+                              { value: 'new', label: 'New Lead' },
+                              { value: 'contact_in_progress', label: 'In Progress' },
+                              { value: 'resolved', label: 'Resolved' },
+                            ]}
+                            variant="compact"
+                            className="w-36"
+                          />
+                        </td>
+                        <td className="p-3.5 text-right">
+                          <button
+                            type="button"
+                            onClick={() => setViewingEnquiry(enq)}
+                            className="px-3 py-1.5 rounded-xl bg-blue-500/10 hover:bg-blue-500/20 text-blue-400 border border-blue-500/30 text-xs font-bold transition-all cursor-pointer inline-flex items-center gap-1.5 whitespace-nowrap shadow-sm shadow-blue-500/10"
+                          >
+                            <Eye className="w-3.5 h-3.5" />
+                            <span>View Lead</span>
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
             </div>
           )}
 
@@ -1335,97 +1372,135 @@ export default function Admin() {
                       return (
                         <div
                           key={app.id}
-                          className="p-5 rounded-2xl bg-slate-950/80 border border-slate-800 hover:border-slate-700 transition-all flex flex-col lg:flex-row items-start lg:items-center justify-between gap-5 shadow-lg"
+                          className="p-5 sm:p-6 rounded-2xl bg-slate-950/90 border border-slate-800 hover:border-slate-700/80 transition-all shadow-xl space-y-4"
                         >
-                          {/* Property & Schedule Info */}
-                          <div className="flex items-start gap-4 min-w-0 flex-1">
-                            <img
-                              src={primaryImg}
-                              alt={prop?.title || 'Property'}
-                              className="w-20 h-20 rounded-xl object-cover border border-slate-800 shrink-0"
-                            />
-                            <div className="min-w-0 space-y-1">
-                              <div className="flex items-center gap-2 flex-wrap">
-                                {prop?.slug ? (
-                                  <Link
-                                    to={`/properties/${prop.slug}`}
-                                    className="font-bold text-white hover:text-amber-400 text-sm sm:text-base transition-colors truncate"
-                                  >
-                                    {prop.title}
-                                  </Link>
-                                ) : (
-                                  <span className="font-bold text-white text-sm sm:text-base truncate">
-                                    {prop?.title || 'Property Listing'}
-                                  </span>
-                                )}
-                                {prop?.formatted_price && (
-                                  <span className="text-xs font-mono font-bold text-amber-400 bg-amber-400/10 px-2 py-0.5 rounded-md border border-amber-400/20">
-                                    {prop.formatted_price}
-                                  </span>
-                                )}
+                          {/* Top Row: Thumbnail + Full Title + Price + Status Select + Reschedule Button */}
+                          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-800/80 pb-4">
+                            <div className="flex items-center gap-3.5 min-w-0">
+                              <img
+                                src={primaryImg}
+                                alt={prop?.title || 'Property'}
+                                className="w-14 h-14 rounded-xl object-cover border border-slate-800 shrink-0 shadow-md"
+                              />
+                              <div className="min-w-0 space-y-1">
+                                <div className="flex items-center gap-2 flex-wrap">
+                                  {prop?.slug ? (
+                                    <Link
+                                      to={`/properties/${prop.slug}`}
+                                      className="font-bold text-white hover:text-amber-400 text-sm sm:text-base transition-colors line-clamp-1"
+                                    >
+                                      {prop.title}
+                                    </Link>
+                                  ) : (
+                                    <span className="font-bold text-white text-sm sm:text-base line-clamp-1">
+                                      {prop?.title || 'Property Listing'}
+                                    </span>
+                                  )}
+                                  {prop?.formatted_price && (
+                                    <span className="text-xs font-mono font-bold text-amber-400 bg-amber-400/10 px-2 py-0.5 rounded-md border border-amber-400/20">
+                                      {prop.formatted_price}
+                                    </span>
+                                  )}
+                                </div>
+                                <div className="flex items-center gap-1.5 text-xs text-slate-400">
+                                  <MapPin className="w-3.5 h-3.5 text-slate-500 shrink-0" />
+                                  <span className="truncate">{prop?.address || 'Prime Metropolitan Location'}</span>
+                                </div>
                               </div>
+                            </div>
 
-                              <div className="flex items-center gap-3 text-xs text-amber-300 font-semibold flex-wrap">
-                                <span>📅 Date: {formatDate(app.date)}</span>
-                                <span>⏰ Time: {app.time_slot || '11:00 AM'}</span>
+                            {/* Status & Reschedule Action */}
+                            <div className="flex items-center gap-2.5 shrink-0 self-end sm:self-auto">
+                              <CustomSelect
+                                value={app.status}
+                                onChange={(val) => handleAppointmentStatusChange(app.id, val)}
+                                options={[
+                                  { value: 'pending', label: 'Pending' },
+                                  { value: 'confirmed', label: 'Confirmed' },
+                                  { value: 'completed', label: 'Completed' },
+                                  { value: 'cancelled', label: 'Cancelled' },
+                                ]}
+                                variant="compact"
+                                className="w-36"
+                              />
+                              <button
+                                type="button"
+                                onClick={() => setViewingAppointment(app)}
+                                className="px-3.5 py-2 rounded-xl bg-amber-400/10 hover:bg-amber-400/20 border border-amber-400/30 text-amber-400 text-xs font-bold transition-all cursor-pointer flex items-center gap-2 whitespace-nowrap shrink-0 shadow-sm shadow-amber-400/10"
+                              >
+                                <CalendarCheck className="w-4 h-4 text-amber-400 shrink-0" />
+                                <span>View & Reschedule</span>
+                              </button>
+                            </div>
+                          </div>
+
+                          {/* Bottom Row: 3 Clean Grid Columns */}
+                          <div className="grid grid-cols-1 md:grid-cols-3 gap-3.5 pt-1 text-xs">
+                            {/* Col 1: Schedule & Notes */}
+                            <div className="space-y-2 bg-slate-900/60 p-3 rounded-xl border border-slate-800/80">
+                              <span className="text-[10px] uppercase font-bold text-amber-400 tracking-wider block">
+                                Scheduled Walkthrough
+                              </span>
+                              <div className="flex items-center gap-2 text-slate-200 font-semibold flex-wrap">
+                                <div className="flex items-center gap-1.5 bg-amber-400/10 text-amber-300 px-2.5 py-1 rounded-lg border border-amber-400/20">
+                                  <Calendar className="w-3.5 h-3.5" />
+                                  <span>{formatDate(app.date)}</span>
+                                </div>
+                                <div className="flex items-center gap-1.5 bg-slate-800 text-white px-2.5 py-1 rounded-lg border border-slate-700">
+                                  <Clock className="w-3.5 h-3.5 text-amber-400" />
+                                  <span>{app.time_slot || '11:00 AM'}</span>
+                                </div>
                               </div>
-
                               {app.notes && (
-                                <p className="text-xs text-slate-400 italic bg-slate-900/80 px-2.5 py-1 rounded-lg border border-slate-800/80 mt-1">
-                                  Notes: {app.notes}
+                                <p className="text-[11px] text-slate-400 italic leading-relaxed pt-1 border-t border-slate-800/80">
+                                  <span className="font-semibold text-slate-300 not-italic">Notes:</span> {app.notes}
                                 </p>
                               )}
                             </div>
-                          </div>
 
-                          {/* Assigned Agent Box (HIGHLIGHTED!) */}
-                          <div className="p-3 rounded-xl bg-slate-900 border border-slate-800 shrink-0 space-y-1 min-w-[210px] w-full sm:w-auto">
-                            <span className="text-[10px] uppercase font-bold text-amber-400/90 block tracking-wider">
-                              Assigned Agent
-                            </span>
-                            <div className="flex items-center gap-2.5">
-                              <img
-                                src={
-                                  agent?.avatar ||
-                                  'https://images.unsplash.com/photo-1560250097-0b93528c311a?auto=format&fit=crop&q=80&w=100'
-                                }
-                                alt={agent?.name || 'Agent'}
-                                className="w-9 h-9 rounded-full object-cover border border-amber-400/50 shrink-0"
-                              />
-                              <div className="min-w-0">
-                                <p className="text-xs font-bold text-white truncate">{agent?.name || 'Unassigned'}</p>
-                                <p className="text-[11px] text-slate-400 truncate">{agent?.agency_name || 'DVS Realty'}</p>
+                            {/* Col 2: Assigned Agent */}
+                            <div className="space-y-2 bg-slate-900/60 p-3 rounded-xl border border-slate-800/80">
+                              <span className="text-[10px] uppercase font-bold text-slate-400 tracking-wider block">
+                                Assigned Agent
+                              </span>
+                              <div className="flex items-center gap-2.5">
+                                <img
+                                  src={
+                                    agent?.avatar ||
+                                    'https://images.unsplash.com/photo-1560250097-0b93528c311a?auto=format&fit=crop&q=80&w=100'
+                                  }
+                                  alt={agent?.name || 'Agent'}
+                                  className="w-9 h-9 rounded-full object-cover border border-amber-400/50 shrink-0 shadow"
+                                />
+                                <div className="min-w-0">
+                                  <p className="font-bold text-white truncate">{agent?.name || 'Unassigned'}</p>
+                                  <p className="text-[11px] text-slate-400 truncate">{agent?.agency_name || 'DVS Realty'}</p>
+                                </div>
                               </div>
                             </div>
-                          </div>
 
-                          {/* Client Info */}
-                          <div className="space-y-0.5 text-xs text-slate-400 shrink-0 min-w-[170px] w-full sm:w-auto">
-                            <span className="text-[10px] uppercase font-bold text-slate-500 block tracking-wider">
-                              Client Info
-                            </span>
-                            <p className="font-semibold text-white">{app.name}</p>
-                            <p className="text-[11px]">{app.email}</p>
-                            <p className="text-[11px] text-slate-500">{app.phone}</p>
-                          </div>
-
-                          {/* Status & Actions */}
-                          <div className="shrink-0 space-y-1.5 w-full sm:w-auto">
-                            <span className="text-[10px] uppercase font-bold text-slate-500 block tracking-wider">
-                              Walkthrough Status
-                            </span>
-                            <CustomSelect
-                              value={app.status}
-                              onChange={(val) => handleAppointmentStatusChange(app.id, val)}
-                              options={[
-                                { value: 'pending', label: 'Pending' },
-                                { value: 'confirmed', label: 'Confirmed' },
-                                { value: 'completed', label: 'Completed' },
-                                { value: 'cancelled', label: 'Cancelled' },
-                              ]}
-                              variant="compact"
-                              className="w-36"
-                            />
+                            {/* Col 3: Client Details */}
+                            <div className="space-y-2 bg-slate-900/60 p-3 rounded-xl border border-slate-800/80">
+                              <span className="text-[10px] uppercase font-bold text-slate-400 tracking-wider block">
+                                Client Details
+                              </span>
+                              <div className="space-y-1">
+                                <div className="flex items-center gap-1.5 text-white font-semibold">
+                                  <UserIcon className="w-3.5 h-3.5 text-slate-400 shrink-0" />
+                                  <span className="truncate">{app.name}</span>
+                                </div>
+                                <div className="flex items-center gap-1.5 text-slate-400 text-[11px]">
+                                  <Mail className="w-3.5 h-3.5 text-slate-500 shrink-0" />
+                                  <span className="truncate">{app.email}</span>
+                                </div>
+                                {app.phone && (
+                                  <div className="flex items-center gap-1.5 text-slate-400 text-[11px]">
+                                    <Phone className="w-3.5 h-3.5 text-slate-500 shrink-0" />
+                                    <span>{app.phone}</span>
+                                  </div>
+                                )}
+                              </div>
+                            </div>
                           </div>
                         </div>
                       );
@@ -2424,36 +2499,39 @@ export default function Admin() {
               </div>
             )}
 
-            {/* Status Update Form */}
-            <div className="pt-2 flex flex-col sm:flex-row items-center justify-between gap-4 border-t border-slate-800">
-              <div className="w-full sm:w-auto space-y-1">
-                <span className="text-[10px] uppercase font-bold text-slate-500 tracking-wider block">
-                  Change Appointment Status
-                </span>
-                <CustomSelect
-                  value={viewingAppointment.status}
-                  onChange={(val) => {
-                    handleAppointmentStatusChange(viewingAppointment.id, val);
-                    setViewingAppointment((prev) => (prev ? { ...prev, status: val as any } : null));
-                  }}
-                  options={[
-                    { value: 'pending', label: 'Pending' },
-                    { value: 'confirmed', label: 'Confirmed' },
-                    { value: 'completed', label: 'Completed' },
-                    { value: 'cancelled', label: 'Cancelled' },
-                  ]}
-                  variant="compact"
-                  direction="up"
-                  className="w-44"
-                />
+            {/* Appointment Status Update Pills */}
+            <div className="pt-4 border-t border-slate-800 space-y-2.5">
+              <span className="text-[10px] uppercase font-bold text-slate-400 tracking-wider block">
+                Update Walkthrough Status
+              </span>
+              <div className="flex flex-wrap items-center gap-2">
+                {[
+                  { value: 'pending', label: 'Pending', bg: 'bg-amber-400', text: 'text-slate-950', border: 'border-amber-400', glow: 'shadow-amber-400/20' },
+                  { value: 'confirmed', label: 'Confirmed', bg: 'bg-emerald-500', text: 'text-white', border: 'border-emerald-500', glow: 'shadow-emerald-500/20' },
+                  { value: 'completed', label: 'Completed', bg: 'bg-blue-500', text: 'text-white', border: 'border-blue-500', glow: 'shadow-blue-500/20' },
+                  { value: 'cancelled', label: 'Cancelled', bg: 'bg-rose-500', text: 'text-white', border: 'border-rose-500', glow: 'shadow-rose-500/20' },
+                ].map((st) => {
+                  const isActive = viewingAppointment.status === st.value;
+                  return (
+                    <button
+                      key={st.value}
+                      type="button"
+                      onClick={() => {
+                        handleAppointmentStatusChange(viewingAppointment.id, st.value);
+                        setViewingAppointment((prev) => (prev ? { ...prev, status: st.value as any } : null));
+                      }}
+                      className={`px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 border shadow-sm ${
+                        isActive
+                          ? `${st.bg} ${st.text} ${st.border} font-extrabold shadow-md ${st.glow}`
+                          : 'bg-slate-950 text-slate-400 border-slate-800 hover:border-slate-700 hover:text-white'
+                      }`}
+                    >
+                      {isActive && <Check className="w-3.5 h-3.5 shrink-0" />}
+                      <span>{st.label}</span>
+                    </button>
+                  );
+                })}
               </div>
-
-              <button
-                onClick={() => setViewingAppointment(null)}
-                className="w-full sm:w-auto px-5 py-2.5 rounded-xl bg-slate-800 text-slate-200 text-xs font-bold hover:bg-slate-700 transition-colors cursor-pointer"
-              >
-                Close Modal
-              </button>
             </div>
           </div>
         </div>
@@ -2573,35 +2651,38 @@ export default function Admin() {
               </p>
             </div>
 
-            {/* Status Update Form */}
-            <div className="pt-2 flex flex-col sm:flex-row items-center justify-between gap-4 border-t border-slate-800">
-              <div className="w-full sm:w-auto space-y-1">
-                <span className="text-[10px] uppercase font-bold text-slate-500 tracking-wider block">
-                  Update Lead Status
-                </span>
-                <CustomSelect
-                  value={viewingEnquiry.status}
-                  onChange={(val) => {
-                    handleEnquiryStatusChange(viewingEnquiry.id, val);
-                    setViewingEnquiry((prev) => (prev ? { ...prev, status: val as any } : null));
-                  }}
-                  options={[
-                    { value: 'new', label: 'New Lead' },
-                    { value: 'contact_in_progress', label: 'In Progress' },
-                    { value: 'resolved', label: 'Resolved' },
-                  ]}
-                  variant="compact"
-                  direction="up"
-                  className="w-44"
-                />
+            {/* Lead Status Update Pills */}
+            <div className="pt-4 border-t border-slate-800 space-y-2.5">
+              <span className="text-[10px] uppercase font-bold text-slate-400 tracking-wider block">
+                Update Lead Resolution Status
+              </span>
+              <div className="flex flex-wrap items-center gap-2">
+                {[
+                  { value: 'new', label: 'New Lead', bg: 'bg-amber-400', text: 'text-slate-950', border: 'border-amber-400', glow: 'shadow-amber-400/20' },
+                  { value: 'contact_in_progress', label: 'In Progress', bg: 'bg-blue-500', text: 'text-white', border: 'border-blue-500', glow: 'shadow-blue-500/20' },
+                  { value: 'resolved', label: 'Resolved', bg: 'bg-emerald-500', text: 'text-white', border: 'border-emerald-500', glow: 'shadow-emerald-500/20' },
+                ].map((st) => {
+                  const isActive = viewingEnquiry.status === st.value;
+                  return (
+                    <button
+                      key={st.value}
+                      type="button"
+                      onClick={() => {
+                        handleEnquiryStatusChange(viewingEnquiry.id, st.value);
+                        setViewingEnquiry((prev) => (prev ? { ...prev, status: st.value as any } : null));
+                      }}
+                      className={`px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 border shadow-sm ${
+                        isActive
+                          ? `${st.bg} ${st.text} ${st.border} font-extrabold shadow-md ${st.glow}`
+                          : 'bg-slate-950 text-slate-400 border-slate-800 hover:border-slate-700 hover:text-white'
+                      }`}
+                    >
+                      {isActive && <Check className="w-3.5 h-3.5 shrink-0" />}
+                      <span>{st.label}</span>
+                    </button>
+                  );
+                })}
               </div>
-
-              <button
-                onClick={() => setViewingEnquiry(null)}
-                className="w-full sm:w-auto px-5 py-2.5 rounded-xl bg-slate-800 text-slate-200 text-xs font-bold hover:bg-slate-700 transition-colors cursor-pointer"
-              >
-                Close Modal
-              </button>
             </div>
           </div>
         </div>

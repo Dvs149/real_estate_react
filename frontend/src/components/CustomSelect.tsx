@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { ChevronDown, Check, Search, X } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -41,22 +42,70 @@ export default function CustomSelect({
   const [isOpen, setIsOpen] = useState(false);
   const [isDropUp, setIsDropUp] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
+  const [coords, setCoords] = useState<{ top?: number; bottom?: number; left: number; width: number } | null>(null);
+
   const containerRef = useRef<HTMLDivElement>(null);
+  const menuRef = useRef<HTMLDivElement>(null);
   const searchInputRef = useRef<HTMLInputElement>(null);
 
   // Selected Option
   const selectedOption = options.find((opt) => opt.value === value);
 
+  const updateCoords = () => {
+    if (!containerRef.current) return;
+    const rect = containerRef.current.getBoundingClientRect();
+    const spaceBelow = window.innerHeight - rect.bottom;
+    const dropUp = direction === 'up' || (direction === 'auto' && spaceBelow < 220 && rect.top > 220);
+
+    setIsDropUp(dropUp);
+
+    if (dropUp) {
+      setCoords({
+        bottom: window.innerHeight - rect.top + 6,
+        left: rect.left,
+        width: Math.max(rect.width, 160),
+      });
+    } else {
+      setCoords({
+        top: rect.bottom + 6,
+        left: rect.left,
+        width: Math.max(rect.width, 160),
+      });
+    }
+  };
+
   // Close on outside click
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
-      if (containerRef.current && !containerRef.current.contains(event.target as Node)) {
+      const target = event.target as Node;
+      if (
+        containerRef.current &&
+        !containerRef.current.contains(target) &&
+        menuRef.current &&
+        !menuRef.current.contains(target)
+      ) {
         setIsOpen(false);
       }
     }
-    document.addEventListener('mousedown', handleClickOutside);
+    if (isOpen) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
     return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, []);
+  }, [isOpen]);
+
+  // Recalculate coordinates on open, scroll, or resize
+  useEffect(() => {
+    if (isOpen) {
+      updateCoords();
+      const handleReposition = () => updateCoords();
+      window.addEventListener('scroll', handleReposition, true);
+      window.addEventListener('resize', handleReposition);
+      return () => {
+        window.removeEventListener('scroll', handleReposition, true);
+        window.removeEventListener('resize', handleReposition);
+      };
+    }
+  }, [isOpen, direction]);
 
   // Focus search input on open
   useEffect(() => {
@@ -82,20 +131,97 @@ export default function CustomSelect({
   const handleToggle = () => {
     if (disabled) return;
     if (!isOpen) {
-      if (direction === 'up') {
-        setIsDropUp(true);
-      } else if (direction === 'down') {
-        setIsDropUp(false);
-      } else if (containerRef.current) {
-        const rect = containerRef.current.getBoundingClientRect();
-        const spaceBelow = window.innerHeight - rect.bottom;
-        setIsDropUp(spaceBelow < 240);
-      }
+      updateCoords();
     }
     setIsOpen((prev) => !prev);
   };
 
   const isHero = variant === 'hero';
+
+  const dropdownPortal = (
+    <AnimatePresence>
+      {isOpen && coords && (
+        <motion.div
+          ref={menuRef}
+          initial={{ opacity: 0, y: isDropUp ? 6 : -6, scale: 0.98 }}
+          animate={{ opacity: 1, y: 0, scale: 1 }}
+          exit={{ opacity: 0, y: isDropUp ? 6 : -6, scale: 0.98 }}
+          transition={{ duration: 0.15, ease: 'easeOut' }}
+          style={{
+            position: 'fixed',
+            left: `${coords.left}px`,
+            width: `${coords.width}px`,
+            top: coords.top !== undefined ? `${coords.top}px` : undefined,
+            bottom: coords.bottom !== undefined ? `${coords.bottom}px` : undefined,
+            zIndex: 999999,
+          }}
+          className="bg-slate-900 border border-slate-700/90 rounded-2xl shadow-2xl shadow-black/95 backdrop-blur-xl overflow-hidden p-1.5 flex flex-col max-h-72"
+        >
+          {/* Search Bar if enabled */}
+          {(searchable || options.length > 7) && (
+            <div className="p-1.5 mb-1 border-b border-slate-800 relative shrink-0">
+              <Search className="w-3.5 h-3.5 text-slate-400 absolute left-3.5 top-3" />
+              <input
+                ref={searchInputRef}
+                type="text"
+                placeholder="Search options..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="w-full pl-8 pr-7 py-1.5 bg-slate-950 rounded-xl border border-slate-800 text-xs text-white placeholder:text-slate-500 focus:outline-none focus:border-amber-400"
+              />
+              {searchQuery && (
+                <button
+                  type="button"
+                  onClick={() => setSearchQuery('')}
+                  className="absolute right-3.5 top-3 text-slate-400 hover:text-white"
+                >
+                  <X className="w-3.5 h-3.5" />
+                </button>
+              )}
+            </div>
+          )}
+
+          {/* Options List */}
+          <div className="overflow-y-auto space-y-0.5 pr-1 custom-scrollbar max-h-56">
+            {filteredOptions.length > 0 ? (
+              filteredOptions.map((opt) => {
+                const isSelected = opt.value === value;
+                return (
+                  <button
+                    key={opt.value}
+                    type="button"
+                    onClick={() => handleSelect(opt.value)}
+                    className={`w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs transition-all cursor-pointer text-left ${
+                      isSelected
+                        ? 'bg-amber-400/15 text-amber-300 font-semibold border border-amber-400/30'
+                        : 'text-slate-300 hover:bg-slate-800/70 hover:text-white'
+                    }`}
+                  >
+                    <div className="flex items-center gap-2.5 min-w-0 truncate">
+                      {opt.icon && <span className="shrink-0">{opt.icon}</span>}
+                      <div className="min-w-0 truncate">
+                        <p className="truncate leading-snug">{opt.label}</p>
+                        {opt.description && (
+                          <p className="text-[10px] text-slate-500 truncate leading-none mt-0.5">
+                            {opt.description}
+                          </p>
+                        )}
+                      </div>
+                    </div>
+                    {isSelected && <Check className="w-3.5 h-3.5 text-amber-400 shrink-0 ml-2" />}
+                  </button>
+                );
+              })
+            ) : (
+              <div className="py-4 text-center text-slate-500 text-xs font-medium">
+                No matching options found
+              </div>
+            )}
+          </div>
+        </motion.div>
+      )}
+    </AnimatePresence>
+  );
 
   return (
     <div className={`relative min-w-0 w-full ${className}`} ref={containerRef}>
@@ -137,82 +263,7 @@ export default function CustomSelect({
         </motion.div>
       </button>
 
-      {/* Floating Options Dropdown Menu */}
-      <AnimatePresence>
-        {isOpen && (
-          <motion.div
-            initial={{ opacity: 0, y: isDropUp ? 6 : -6, scale: 0.98 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: isDropUp ? 6 : -6, scale: 0.98 }}
-            transition={{ duration: 0.15, ease: 'easeOut' }}
-            className={`absolute left-0 right-0 z-[100] w-full bg-slate-900 border border-slate-700/80 rounded-2xl shadow-2xl shadow-black/80 backdrop-blur-xl overflow-hidden p-1.5 flex flex-col max-h-72 ${
-              isDropUp ? 'bottom-full mb-2' : 'top-full mt-1.5'
-            }`}
-          >
-            {/* Search Bar if enabled */}
-            {(searchable || options.length > 7) && (
-              <div className="p-1.5 mb-1 border-b border-slate-800 relative shrink-0">
-                <Search className="w-3.5 h-3.5 text-slate-400 absolute left-3.5 top-3" />
-                <input
-                  ref={searchInputRef}
-                  type="text"
-                  placeholder="Search options..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-full pl-8 pr-7 py-1.5 bg-slate-950 rounded-xl border border-slate-800 text-xs text-white placeholder:text-slate-500 focus:outline-none focus:border-amber-400"
-                />
-                {searchQuery && (
-                  <button
-                    type="button"
-                    onClick={() => setSearchQuery('')}
-                    className="absolute right-3.5 top-3 text-slate-400 hover:text-white"
-                  >
-                    <X className="w-3.5 h-3.5" />
-                  </button>
-                )}
-              </div>
-            )}
-
-            {/* Options List */}
-            <div className="overflow-y-auto space-y-0.5 pr-1 custom-scrollbar max-h-56">
-              {filteredOptions.length > 0 ? (
-                filteredOptions.map((opt) => {
-                  const isSelected = opt.value === value;
-                  return (
-                    <button
-                      key={opt.value}
-                      type="button"
-                      onClick={() => handleSelect(opt.value)}
-                      className={`w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs transition-all cursor-pointer text-left ${
-                        isSelected
-                          ? 'bg-amber-400/15 text-amber-300 font-semibold border border-amber-400/30'
-                          : 'text-slate-300 hover:bg-slate-800/70 hover:text-white'
-                      }`}
-                    >
-                      <div className="flex items-center gap-2.5 min-w-0 truncate">
-                        {opt.icon && <span className="shrink-0">{opt.icon}</span>}
-                        <div className="min-w-0 truncate">
-                          <p className="truncate leading-snug">{opt.label}</p>
-                          {opt.description && (
-                            <p className="text-[10px] text-slate-500 truncate leading-none mt-0.5">
-                              {opt.description}
-                            </p>
-                          )}
-                        </div>
-                      </div>
-                      {isSelected && <Check className="w-3.5 h-3.5 text-amber-400 shrink-0 ml-2" />}
-                    </button>
-                  );
-                })
-              ) : (
-                <div className="py-4 text-center text-slate-500 text-xs font-medium">
-                  No matching options found
-                </div>
-              )}
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+      {createPortal(dropdownPortal, document.body)}
     </div>
   );
 }
