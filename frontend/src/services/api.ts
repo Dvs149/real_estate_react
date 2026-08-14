@@ -39,7 +39,7 @@ export async function fetchApi<T>(endpoint: string, options: RequestInit = {}): 
     }
 
     if (!res.ok) {
-      if (res.status === 401 || res.status === 403) {
+      if (res.status === 401) {
         if (typeof window !== 'undefined') {
           localStorage.removeItem('auth_token');
           localStorage.removeItem('auth_user');

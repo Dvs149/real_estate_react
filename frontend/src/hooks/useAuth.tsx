@@ -41,14 +41,22 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       // Verify token with backend
       fetchApi<{ user: User }>('/auth/me')
         .then((res) => {
-          setUser(res.user);
-          localStorage.setItem('auth_user', JSON.stringify(res.user));
+          if (res && res.user) {
+            setUser(res.user);
+            localStorage.setItem('auth_user', JSON.stringify(res.user));
+          }
         })
-        .catch(() => {
-          localStorage.removeItem('auth_token');
-          localStorage.removeItem('auth_user');
-          setToken(null);
-          setUser(null);
+        .catch((err: any) => {
+          const isUnauthenticated =
+            err?.status === 401 ||
+            (err?.message && (err.message.includes('401') || err.message.includes('Unauthenticated')));
+
+          if (isUnauthenticated) {
+            localStorage.removeItem('auth_token');
+            localStorage.removeItem('auth_user');
+            setToken(null);
+            setUser(null);
+          }
         })
         .finally(() => setLoading(false));
     } else {
