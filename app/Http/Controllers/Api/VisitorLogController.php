@@ -13,7 +13,9 @@ class VisitorLogController extends Controller
      */
     public function log(Request $request)
     {
-        $ip = $request->ip();
+        $clientIp = $request->input('ip_address');
+        $serverIp = $request->ip();
+        $ip = ($clientIp && in_array($serverIp, ['127.0.0.1', '::1', 'localhost'])) ? $clientIp : ($serverIp ?: ($clientIp ?: '127.0.0.1'));
         $user = $request->user();
         $userId = $user?->id;
         $sessionId = $request->input('session_id');
