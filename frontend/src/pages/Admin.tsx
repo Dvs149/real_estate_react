@@ -118,7 +118,7 @@ export default function Admin() {
   const [propertyTypesList, setPropertyTypesList] = useState<PropertyType[]>([]);
   const [agentsList, setAgentsList] = useState<Agent[]>([]);
 
-  // Pagination & Search State for Admin Tabs (10 items per page)
+  // Pagination & Search State for Admin Tabs
   const [propertyPage, setPropertyPage] = useState<number>(1);
   const [locationPage, setLocationPage] = useState<number>(1);
   const [blogPage, setBlogPage] = useState<number>(1);
@@ -126,13 +126,19 @@ export default function Admin() {
   const [visitPage, setVisitPage] = useState<number>(1);
   const [userPage, setUserPage] = useState<number>(1);
 
+  // Dynamic Items Per Page State for all 6 Admin Tabs (default 10)
+  const [propertyPerPage, setPropertyPerPage] = useState<number>(10);
+  const [locationPerPage, setLocationPerPage] = useState<number>(10);
+  const [blogPerPage, setBlogPerPage] = useState<number>(10);
+  const [leadPerPage, setLeadPerPage] = useState<number>(10);
+  const [visitPerPage, setVisitPerPage] = useState<number>(10);
+  const [userPerPage, setUserPerPage] = useState<number>(10);
+
   const [propertySearch, setPropertySearch] = useState<string>('');
   const [locationSearch, setLocationSearch] = useState<string>('');
   const [blogSearch, setBlogSearch] = useState<string>('');
   const [leadSearch, setLeadSearch] = useState<string>('');
   const [userSearch, setUserSearch] = useState<string>('');
-
-  const itemsPerPage = 10;
 
   // Bulk Delete Selection States
   const [selectedPropertyIds, setSelectedPropertyIds] = useState<number[]>([]);
@@ -832,40 +838,40 @@ export default function Admin() {
   });
 
   // Tab Pagination Calculations
-  const totalPropertyPages = Math.ceil(filteredProperties.length / itemsPerPage);
+  const totalPropertyPages = Math.ceil(filteredProperties.length / propertyPerPage);
   const paginatedProperties = filteredProperties.slice(
-    (propertyPage - 1) * itemsPerPage,
-    propertyPage * itemsPerPage
+    (propertyPage - 1) * propertyPerPage,
+    propertyPage * propertyPerPage
   );
 
-  const totalLocationPages = Math.ceil(filteredLocations.length / itemsPerPage);
+  const totalLocationPages = Math.ceil(filteredLocations.length / locationPerPage);
   const paginatedLocations = filteredLocations.slice(
-    (locationPage - 1) * itemsPerPage,
-    locationPage * itemsPerPage
+    (locationPage - 1) * locationPerPage,
+    locationPage * locationPerPage
   );
 
-  const totalBlogPages = Math.ceil(filteredBlogsList.length / itemsPerPage);
+  const totalBlogPages = Math.ceil(filteredBlogsList.length / blogPerPage);
   const paginatedBlogs = filteredBlogsList.slice(
-    (blogPage - 1) * itemsPerPage,
-    blogPage * itemsPerPage
+    (blogPage - 1) * blogPerPage,
+    blogPage * blogPerPage
   );
 
-  const totalLeadPages = Math.ceil(filteredLeads.length / itemsPerPage);
+  const totalLeadPages = Math.ceil(filteredLeads.length / leadPerPage);
   const paginatedLeads = filteredLeads.slice(
-    (leadPage - 1) * itemsPerPage,
-    leadPage * itemsPerPage
+    (leadPage - 1) * leadPerPage,
+    leadPage * leadPerPage
   );
 
-  const totalVisitPages = Math.ceil(filteredAppointments.length / itemsPerPage);
+  const totalVisitPages = Math.ceil(filteredAppointments.length / visitPerPage);
   const paginatedVisits = filteredAppointments.slice(
-    (visitPage - 1) * itemsPerPage,
-    visitPage * itemsPerPage
+    (visitPage - 1) * visitPerPage,
+    visitPage * visitPerPage
   );
 
-  const totalUserPages = Math.ceil(filteredUsersList.length / itemsPerPage);
+  const totalUserPages = Math.ceil(filteredUsersList.length / userPerPage);
   const paginatedUsers = filteredUsersList.slice(
-    (userPage - 1) * itemsPerPage,
-    userPage * itemsPerPage
+    (userPage - 1) * userPerPage,
+    userPage * userPerPage
   );
 
   const navMenuItems = [
@@ -1331,6 +1337,12 @@ export default function Admin() {
                 currentPage={propertyPage}
                 totalPages={totalPropertyPages}
                 onPageChange={setPropertyPage}
+                itemsPerPage={propertyPerPage}
+                onItemsPerPageChange={(newPerPage) => {
+                  setPropertyPerPage(newPerPage);
+                  setPropertyPage(1);
+                }}
+                totalItems={filteredProperties.length}
               />
             </div>
           )}
@@ -1474,6 +1486,12 @@ export default function Admin() {
                 currentPage={locationPage}
                 totalPages={totalLocationPages}
                 onPageChange={setLocationPage}
+                itemsPerPage={locationPerPage}
+                onItemsPerPageChange={(newPerPage) => {
+                  setLocationPerPage(newPerPage);
+                  setLocationPage(1);
+                }}
+                totalItems={filteredLocations.length}
               />
             </div>
           )}
@@ -1632,6 +1650,12 @@ export default function Admin() {
                 currentPage={blogPage}
                 totalPages={totalBlogPages}
                 onPageChange={setBlogPage}
+                itemsPerPage={blogPerPage}
+                onItemsPerPageChange={(newPerPage) => {
+                  setBlogPerPage(newPerPage);
+                  setBlogPage(1);
+                }}
+                totalItems={filteredBlogsList.length}
               />
             </div>
           )}
@@ -1780,6 +1804,12 @@ export default function Admin() {
                 currentPage={leadPage}
                 totalPages={totalLeadPages}
                 onPageChange={setLeadPage}
+                itemsPerPage={leadPerPage}
+                onItemsPerPageChange={(newPerPage) => {
+                  setLeadPerPage(newPerPage);
+                  setLeadPage(1);
+                }}
+                totalItems={filteredLeads.length}
               />
             </div>
           )}
@@ -2009,6 +2039,12 @@ export default function Admin() {
                 currentPage={visitPage}
                 totalPages={totalVisitPages}
                 onPageChange={setVisitPage}
+                itemsPerPage={visitPerPage}
+                onItemsPerPageChange={(newPerPage) => {
+                  setVisitPerPage(newPerPage);
+                  setVisitPage(1);
+                }}
+                totalItems={filteredAppointments.length}
               />
             </div>
           )}
@@ -2155,6 +2191,12 @@ export default function Admin() {
                 currentPage={userPage}
                 totalPages={totalUserPages}
                 onPageChange={setUserPage}
+                itemsPerPage={userPerPage}
+                onItemsPerPageChange={(newPerPage) => {
+                  setUserPerPage(newPerPage);
+                  setUserPage(1);
+                }}
+                totalItems={filteredUsersList.length}
               />
             </div>
           )}

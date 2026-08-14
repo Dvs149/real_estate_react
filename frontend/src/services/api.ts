@@ -259,6 +259,12 @@ export async function deleteEnquiry(id: number): Promise<{ message: string }> {
   });
 }
 
+export async function cancelUserEnquiry(id: number): Promise<{ message: string }> {
+  return fetchApi<{ message: string }>(`/enquiries/${id}`, {
+    method: 'DELETE',
+  });
+}
+
 export async function getAdminAppointments(params: Record<string, any> = {}): Promise<{ data: Appointment[] }> {
   const query = new URLSearchParams();
   Object.entries(params).forEach(([key, val]) => {

@@ -1,12 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { useSearchParams, useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
-import { getFavorites, getUserEnquiries, getUserAppointments, updateAppointmentStatus } from '../services/api';
+import { getFavorites, getUserEnquiries, getUserAppointments, updateAppointmentStatus, cancelUserEnquiry } from '../services/api';
 import PropertyCard from '../components/PropertyCard';
 import CustomDatePicker from '../components/CustomDatePicker';
 import CustomSelect from '../components/CustomSelect';
+import ConfirmModal from '../components/ConfirmModal';
 import { Property, Enquiry, Appointment } from '../types';
-import { User, Heart, MessageSquare, Calendar, Shield, Save, Loader2, Clock, MapPin, Mail, Phone, Edit2, CheckCircle2, Lock, Key, Camera, AlertCircle } from 'lucide-react';
+import { User, Heart, MessageSquare, Calendar, Shield, Save, Loader2, Clock, MapPin, Mail, Phone, Edit2, CheckCircle2, Lock, Key, Camera, AlertCircle, X } from 'lucide-react';
 import { formatDate } from '../utils/formatters';
 
 export default function Dashboard() {
@@ -54,6 +55,26 @@ export default function Dashboard() {
       console.error('Failed to reschedule appointment:', err);
     } finally {
       setSavingApp(false);
+    }
+  };
+
+  // Enquiry Cancel State
+  const [deletingEnquiry, setDeletingEnquiry] = useState<Enquiry | null>(null);
+  const [cancellingEnquiry, setCancellingEnquiry] = useState(false);
+
+  const handleConfirmCancelEnquiry = async () => {
+    if (!deletingEnquiry) return;
+    setCancellingEnquiry(true);
+    try {
+      await cancelUserEnquiry(deletingEnquiry.id);
+      setEnquiries((prev) =>
+        prev.map((e) => (e.id === deletingEnquiry.id ? { ...e, status: 'cancelled' } : e))
+      );
+      setDeletingEnquiry(null);
+    } catch (err: any) {
+      console.error('Failed to cancel enquiry:', err);
+    } finally {
+      setCancellingEnquiry(false);
     }
   };
 
@@ -464,17 +485,36 @@ export default function Dashboard() {
                         </div>
                       </div>
 
-                      <span
-                        className={`px-2.5 py-1 rounded-lg text-[10px] font-bold uppercase shrink-0 ${
-                          enq.status === 'new'
-                            ? 'bg-blue-500/20 text-blue-300 border border-blue-500/30'
-                            : enq.status === 'contact_in_progress'
-                            ? 'bg-amber-400/20 text-amber-300 border border-amber-400/30'
-                            : 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30'
-                        }`}
-                      >
-                        {enq.status === 'contact_in_progress' ? 'IN PROGRESS' : enq.status}
-                      </span>
+                      <div className="flex items-center gap-2 shrink-0">
+                        <span
+                          className={`px-2.5 py-1 rounded-lg text-[10px] font-bold uppercase ${
+                            enq.status === 'new'
+                              ? 'bg-blue-500/20 text-blue-300 border border-blue-500/30'
+                              : enq.status === 'contact_in_progress'
+                              ? 'bg-amber-400/20 text-amber-300 border border-amber-400/30'
+                              : enq.status === 'cancelled'
+                              ? 'bg-rose-500/20 text-rose-300 border border-rose-500/30'
+                              : 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30'
+                          }`}
+                        >
+                          {enq.status === 'contact_in_progress'
+                            ? 'IN PROGRESS'
+                            : enq.status === 'cancelled'
+                            ? 'CANCELLED'
+                            : enq.status}
+                        </span>
+
+                        {enq.status !== 'cancelled' && (
+                          <button
+                            type="button"
+                            onClick={() => setDeletingEnquiry(enq)}
+                            className="px-2.5 py-1 rounded-lg bg-rose-500/10 border border-rose-500/30 text-rose-400 hover:bg-rose-500 hover:text-white text-[11px] font-bold transition-all flex items-center gap-1 cursor-pointer"
+                            title="Cancel this enquiry"
+                          >
+                            <X className="w-3.5 h-3.5" /> Cancel Enquiry
+                          </button>
+                        )}
+                      </div>
                     </div>
 
                     {/* Meta info in 1 compact bar */}
@@ -484,23 +524,53 @@ export default function Dashboard() {
                           <Clock className="w-3 h-3 shrink-0" />
                           {enq.created_at ? formatDate(enq.created_at) : 'Recent Inquiry'}
                         </span>
-                        <span>•</span>
-                        <span className="text-slate-300 font-medium flex items-center gap-1">
-                          <User className="w-3 h-3 text-slate-400 shrink-0" />
-                          {enq.name}
-                        </span>
-                        <span>•</span>
-                        <span className="text-slate-400 flex items-center gap-1">
-                          <Mail className="w-3 h-3 shrink-0" />
-                          {enq.email}
-                        </span>
-                        {enq.phone && (
+                        {user?.role === 'user' ? (
                           <>
                             <span>•</span>
-                            <span className="text-slate-400 flex items-center gap-1">
-                              <Phone className="w-3 h-3 shrink-0" />
-                              {enq.phone}
+                            <span className="text-emerald-400 font-bold flex items-center gap-1">
+                              <Shield className="w-3 h-3 text-emerald-400 shrink-0" />
+                              Assigned Agent: {(enq.agent || prop?.agent)?.name || 'DVS Concierge Agent'}
                             </span>
+                            {(enq.agent || prop?.agent)?.email && (
+                              <>
+                                <span>•</span>
+                                <span className="text-slate-300 flex items-center gap-1">
+                                  <Mail className="w-3 h-3 text-slate-400 shrink-0" />
+                                  {(enq.agent || prop?.agent)?.email}
+                                </span>
+                              </>
+                            )}
+                            {(enq.agent || prop?.agent)?.phone && (
+                              <>
+                                <span>•</span>
+                                <span className="text-slate-300 flex items-center gap-1">
+                                  <Phone className="w-3 h-3 text-slate-400 shrink-0" />
+                                  {(enq.agent || prop?.agent)?.phone}
+                                </span>
+                              </>
+                            )}
+                          </>
+                        ) : (
+                          <>
+                            <span>•</span>
+                            <span className="text-slate-300 font-medium flex items-center gap-1">
+                              <User className="w-3 h-3 text-slate-400 shrink-0" />
+                              {enq.name}
+                            </span>
+                            <span>•</span>
+                            <span className="text-slate-400 flex items-center gap-1">
+                              <Mail className="w-3 h-3 shrink-0" />
+                              {enq.email}
+                            </span>
+                            {enq.phone && (
+                              <>
+                                <span>•</span>
+                                <span className="text-slate-400 flex items-center gap-1">
+                                  <Phone className="w-3 h-3 shrink-0" />
+                                  {enq.phone}
+                                </span>
+                              </>
+                            )}
                           </>
                         )}
                       </div>
@@ -612,23 +682,53 @@ export default function Dashboard() {
                           <Clock className="w-3 h-3 shrink-0" />
                           {app.time_slot}
                         </span>
-                        <span>•</span>
-                        <span className="text-slate-300 font-medium flex items-center gap-1">
-                          <User className="w-3 h-3 text-slate-400 shrink-0" />
-                          {app.name}
-                        </span>
-                        <span>•</span>
-                        <span className="text-slate-400 flex items-center gap-1">
-                          <Mail className="w-3 h-3 shrink-0" />
-                          {app.email}
-                        </span>
-                        {app.phone && (
+                        {user?.role === 'user' ? (
                           <>
                             <span>•</span>
-                            <span className="text-slate-400 flex items-center gap-1">
-                              <Phone className="w-3 h-3 shrink-0" />
-                              {app.phone}
+                            <span className="text-emerald-400 font-bold flex items-center gap-1">
+                              <Shield className="w-3 h-3 text-emerald-400 shrink-0" />
+                              Assigned Agent: {(app.agent || prop?.agent)?.name || 'DVS Concierge Agent'}
                             </span>
+                            {(app.agent || prop?.agent)?.email && (
+                              <>
+                                <span>•</span>
+                                <span className="text-slate-300 flex items-center gap-1">
+                                  <Mail className="w-3 h-3 text-slate-400 shrink-0" />
+                                  {(app.agent || prop?.agent)?.email}
+                                </span>
+                              </>
+                            )}
+                            {(app.agent || prop?.agent)?.phone && (
+                              <>
+                                <span>•</span>
+                                <span className="text-slate-300 flex items-center gap-1">
+                                  <Phone className="w-3 h-3 text-slate-400 shrink-0" />
+                                  {(app.agent || prop?.agent)?.phone}
+                                </span>
+                              </>
+                            )}
+                          </>
+                        ) : (
+                          <>
+                            <span>•</span>
+                            <span className="text-slate-300 font-medium flex items-center gap-1">
+                              <User className="w-3 h-3 text-slate-400 shrink-0" />
+                              {app.name}
+                            </span>
+                            <span>•</span>
+                            <span className="text-slate-400 flex items-center gap-1">
+                              <Mail className="w-3 h-3 shrink-0" />
+                              {app.email}
+                            </span>
+                            {app.phone && (
+                              <>
+                                <span>•</span>
+                                <span className="text-slate-400 flex items-center gap-1">
+                                  <Phone className="w-3 h-3 shrink-0" />
+                                  {app.phone}
+                                </span>
+                              </>
+                            )}
                           </>
                         )}
                       </div>
@@ -721,6 +821,18 @@ export default function Dashboard() {
           )}
         </div>
       )}
+
+      {/* CANCEL ENQUIRY CONFIRM MODAL */}
+      <ConfirmModal
+        isOpen={!!deletingEnquiry}
+        title="Cancel Property Enquiry"
+        message={`Are you sure you want to cancel your enquiry for "${deletingEnquiry?.property?.title || 'this property'}"? The enquiry status will be updated to CANCELLED.`}
+        confirmText="Yes, Cancel Enquiry"
+        cancelText="Keep Enquiry"
+        loading={cancellingEnquiry}
+        onConfirm={handleConfirmCancelEnquiry}
+        onCancel={() => setDeletingEnquiry(null)}
+      />
     </div>
   );
 }

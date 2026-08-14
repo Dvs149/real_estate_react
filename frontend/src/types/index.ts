@@ -107,7 +107,7 @@ export interface Enquiry {
   email: string;
   phone: string;
   message: string;
-  status: 'new' | 'contact_in_progress' | 'resolved' | 'archived';
+  status: 'new' | 'contact_in_progress' | 'resolved' | 'archived' | 'cancelled';
   notes?: string;
   created_at?: string;
   property?: Property;

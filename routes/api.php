@@ -62,6 +62,7 @@ Route::middleware('auth:sanctum')->group(function () {
 
     // User Enquiries & Appointments History
     Route::get('/enquiries', [EnquiryController::class, 'index']);
+    Route::delete('/enquiries/{id}', [EnquiryController::class, 'destroy']);
     Route::get('/appointments', [AppointmentController::class, 'index']);
     Route::patch('/appointments/{id}', [AppointmentController::class, 'update']);
 

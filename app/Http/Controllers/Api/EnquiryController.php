@@ -55,4 +55,26 @@ class EnquiryController extends Controller
             'data' => $enquiry,
         ], 201);
     }
+
+    public function destroy(Request $request, $id)
+    {
+        $user = $request->user();
+        $enquiry = Enquiry::find($id);
+
+        if (!$enquiry) {
+            return response()->json(['message' => 'Enquiry not found.'], 404);
+        }
+
+        if (!$user->isAdmin() && $enquiry->user_id !== $user->id) {
+            return response()->json(['message' => 'Unauthorized action.'], 403);
+        }
+
+        $enquiry->status = 'cancelled';
+        $enquiry->save();
+
+        return response()->json([
+            'message' => 'Enquiry cancelled successfully.',
+            'data' => $enquiry,
+        ]);
+    }
 }
