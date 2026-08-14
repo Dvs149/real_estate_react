@@ -20,6 +20,9 @@ import Register from './pages/Register';
 import Dashboard from './pages/Dashboard';
 import Admin from './pages/Admin';
 
+import ProtectedRoute from './components/ProtectedRoute';
+import GuestRoute from './components/GuestRoute';
+
 function InactivityBanner() {
   const { inactivityLoggedOut, dismissInactivityNotice } = useAuth();
 
@@ -76,11 +79,11 @@ export default function App() {
               <Route path="/blog/:slug" element={<BlogDetail />} />
               <Route path="/about" element={<About />} />
               <Route path="/contact" element={<Contact />} />
-              <Route path="/login" element={<Login />} />
-              <Route path="/register" element={<Register />} />
-              <Route path="/dashboard" element={<Dashboard />} />
-              <Route path="/admin" element={<Admin />} />
-              <Route path="/admin/:tab" element={<Admin />} />
+              <Route path="/login" element={<GuestRoute><Login /></GuestRoute>} />
+              <Route path="/register" element={<GuestRoute><Register /></GuestRoute>} />
+              <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
+              <Route path="/admin" element={<ProtectedRoute allowedRoles={['admin']}><Admin /></ProtectedRoute>} />
+              <Route path="/admin/:tab" element={<ProtectedRoute allowedRoles={['admin']}><Admin /></ProtectedRoute>} />
             </Routes>
           </main>
           <InactivityBanner />

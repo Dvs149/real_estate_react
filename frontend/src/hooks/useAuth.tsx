@@ -56,6 +56,37 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   }, []);
 
+  // Multi-tab logout synchronization via Storage Event & Auth Broadcast
+  useEffect(() => {
+    const syncAuthState = () => {
+      const storedToken = localStorage.getItem('auth_token');
+      const storedUser = localStorage.getItem('auth_user');
+      if (!storedToken || !storedUser) {
+        setToken(null);
+        setUser(null);
+      } else {
+        setToken(storedToken);
+        try {
+          setUser(JSON.parse(storedUser));
+        } catch (e) {}
+      }
+    };
+
+    const handleStorageChange = (e: StorageEvent) => {
+      if (e.key === 'auth_token' || e.key === 'auth_user' || e.key === null) {
+        syncAuthState();
+      }
+    };
+
+    window.addEventListener('storage', handleStorageChange);
+    window.addEventListener('auth_state_changed', syncAuthState);
+
+    return () => {
+      window.removeEventListener('storage', handleStorageChange);
+      window.removeEventListener('auth_state_changed', syncAuthState);
+    };
+  }, []);
+
   const logout = useCallback(async () => {
     try {
       await fetchApi('/auth/logout', { method: 'POST' });
@@ -66,6 +97,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setUser(null);
       localStorage.removeItem('auth_token');
       localStorage.removeItem('auth_user');
+      window.dispatchEvent(new Event('auth_state_changed'));
     }
   }, []);
 

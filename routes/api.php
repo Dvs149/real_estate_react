@@ -54,7 +54,7 @@ Route::get('/faqs', [FaqController::class, 'index']);
 Route::post('/enquiries', [EnquiryController::class, 'store']);
 Route::post('/appointments', [AppointmentController::class, 'store']);
 
-// Protected User Routes
+// Protected User Routes (authenticated users)
 Route::middleware('auth:sanctum')->group(function () {
     // Favorites
     Route::get('/favorites', [FavoriteController::class, 'index']);
@@ -65,35 +65,40 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/appointments', [AppointmentController::class, 'index']);
 
     // Property Management (Agent/Admin)
-    Route::post('/properties', [PropertyController::class, 'store']);
-    Route::put('/properties/{id}', [PropertyController::class, 'update']);
-    Route::delete('/properties/{id}', [PropertyController::class, 'destroy']);
+    Route::middleware('agent')->group(function () {
+        Route::post('/properties', [PropertyController::class, 'store']);
+        Route::put('/properties/{id}', [PropertyController::class, 'update']);
+        Route::delete('/properties/{id}', [PropertyController::class, 'destroy']);
+    });
 
-    // Location Management (Admin)
-    Route::post('/locations', [LocationController::class, 'store']);
-    Route::put('/locations/{id}', [LocationController::class, 'update']);
-    Route::delete('/locations/{id}', [LocationController::class, 'destroy']);
+    // Admin Only Routes
+    Route::middleware('admin')->group(function () {
+        // Location Management
+        Route::post('/locations', [LocationController::class, 'store']);
+        Route::put('/locations/{id}', [LocationController::class, 'update']);
+        Route::delete('/locations/{id}', [LocationController::class, 'destroy']);
 
-    // Admin Routes
-    Route::prefix('admin')->group(function () {
-        Route::get('/stats', [AdminController::class, 'stats']);
-        Route::patch('/enquiries/{id}', [AdminController::class, 'updateEnquiryStatus']);
-        Route::patch('/appointments/{id}', [AdminController::class, 'updateAppointmentStatus']);
-        Route::post('/properties/{id}/publish', [AdminController::class, 'togglePropertyPublish']);
-        Route::post('/properties/{id}/featured', [AdminController::class, 'togglePropertyFeatured']);
-        Route::get('/users', [AdminController::class, 'usersList']);
-        Route::post('/users', [AdminController::class, 'createUser']);
-        Route::put('/users/{id}', [AdminController::class, 'updateUser']);
-        Route::patch('/users/{id}/role', [AdminController::class, 'updateUserRole']);
-        Route::delete('/users/{id}', [AdminController::class, 'deleteUser']);
-        Route::post('/settings', [SettingController::class, 'update']);
+        // Admin Management Suite
+        Route::prefix('admin')->group(function () {
+            Route::get('/stats', [AdminController::class, 'stats']);
+            Route::patch('/enquiries/{id}', [AdminController::class, 'updateEnquiryStatus']);
+            Route::patch('/appointments/{id}', [AdminController::class, 'updateAppointmentStatus']);
+            Route::post('/properties/{id}/publish', [AdminController::class, 'togglePropertyPublish']);
+            Route::post('/properties/{id}/featured', [AdminController::class, 'togglePropertyFeatured']);
+            Route::get('/users', [AdminController::class, 'usersList']);
+            Route::post('/users', [AdminController::class, 'createUser']);
+            Route::put('/users/{id}', [AdminController::class, 'updateUser']);
+            Route::patch('/users/{id}/role', [AdminController::class, 'updateUserRole']);
+            Route::delete('/users/{id}', [AdminController::class, 'deleteUser']);
+            Route::post('/settings', [SettingController::class, 'update']);
 
-        // Blog Management Routes
-        Route::get('/blogs', [BlogController::class, 'adminIndex']);
-        Route::post('/blogs', [BlogController::class, 'store']);
-        Route::put('/blogs/{id}', [BlogController::class, 'update']);
-        Route::delete('/blogs/{id}', [BlogController::class, 'destroy']);
-        Route::post('/blogs/{id}/publish', [BlogController::class, 'togglePublish']);
+            // Blog Management Routes
+            Route::get('/blogs', [BlogController::class, 'adminIndex']);
+            Route::post('/blogs', [BlogController::class, 'store']);
+            Route::put('/blogs/{id}', [BlogController::class, 'update']);
+            Route::delete('/blogs/{id}', [BlogController::class, 'destroy']);
+            Route::post('/blogs/{id}/publish', [BlogController::class, 'togglePublish']);
+        });
     });
 });
 
