@@ -253,6 +253,12 @@ export async function updateEnquiryStatus(id: number, status: string): Promise<a
   });
 }
 
+export async function deleteEnquiry(id: number): Promise<{ message: string }> {
+  return fetchApi<{ message: string }>(`/admin/enquiries/${id}`, {
+    method: 'DELETE',
+  });
+}
+
 export async function getAdminAppointments(params: Record<string, any> = {}): Promise<{ data: Appointment[] }> {
   const query = new URLSearchParams();
   Object.entries(params).forEach(([key, val]) => {

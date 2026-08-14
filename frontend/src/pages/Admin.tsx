@@ -5,6 +5,7 @@ import {
   getAdminStats,
   getProperties,
   updateEnquiryStatus,
+  deleteEnquiry,
   getAdminAppointments,
   updateAppointmentStatus,
   togglePropertyPublish,
@@ -37,6 +38,7 @@ import { Property, PropertyType, Agent, User, Enquiry, Appointment, Location, Bl
 import CustomSelect, { SelectOption } from '../components/CustomSelect';
 import CustomDatePicker from '../components/CustomDatePicker';
 import ConfirmModal from '../components/ConfirmModal';
+import Pagination from '../components/Pagination';
 import { formatDate } from '../utils/formatters';
 import {
   Shield,
@@ -104,6 +106,36 @@ export default function Admin() {
   const [categoriesList, setCategoriesList] = useState<BlogCategory[]>([]);
   const [propertyTypesList, setPropertyTypesList] = useState<PropertyType[]>([]);
   const [agentsList, setAgentsList] = useState<Agent[]>([]);
+
+  // Pagination & Search State for Admin Tabs (10 items per page)
+  const [propertyPage, setPropertyPage] = useState<number>(1);
+  const [locationPage, setLocationPage] = useState<number>(1);
+  const [blogPage, setBlogPage] = useState<number>(1);
+  const [leadPage, setLeadPage] = useState<number>(1);
+  const [visitPage, setVisitPage] = useState<number>(1);
+  const [userPage, setUserPage] = useState<number>(1);
+
+  const [propertySearch, setPropertySearch] = useState<string>('');
+  const [locationSearch, setLocationSearch] = useState<string>('');
+  const [blogSearch, setBlogSearch] = useState<string>('');
+  const [leadSearch, setLeadSearch] = useState<string>('');
+  const [userSearch, setUserSearch] = useState<string>('');
+
+  const itemsPerPage = 10;
+
+  // Bulk Delete Selection States
+  const [selectedPropertyIds, setSelectedPropertyIds] = useState<number[]>([]);
+  const [selectedLocationIds, setSelectedLocationIds] = useState<number[]>([]);
+  const [selectedBlogIds, setSelectedBlogIds] = useState<number[]>([]);
+  const [selectedLeadIds, setSelectedLeadIds] = useState<number[]>([]);
+  const [selectedUserIds, setSelectedUserIds] = useState<number[]>([]);
+
+  // Bulk Delete Confirm Modal State
+  const [bulkDeleteConfirm, setBulkDeleteConfirm] = useState<{
+    type: 'properties' | 'locations' | 'blogs' | 'leads' | 'users';
+    ids: number[];
+  } | null>(null);
+  const [bulkDeleting, setBulkDeleting] = useState<boolean>(false);
 
   // Custom Delete Modal State
   const [deleteConfirm, setDeleteConfirm] = useState<{
@@ -511,6 +543,67 @@ export default function Admin() {
     }
   };
 
+  // Bulk Delete Execution Handler
+  const handleExecuteBulkDelete = async () => {
+    if (!bulkDeleteConfirm) return;
+    const { type, ids } = bulkDeleteConfirm;
+    setBulkDeleting(true);
+
+    try {
+      if (type === 'properties') {
+        await Promise.all(ids.map((id) => deleteProperty(id)));
+        setProperties((prev) => prev.filter((p) => !ids.includes(p.id)));
+        setSelectedPropertyIds([]);
+      } else if (type === 'locations') {
+        await Promise.all(ids.map((id) => deleteLocation(id)));
+        setLocationsList((prev) => prev.filter((l) => !ids.includes(l.id)));
+        setSelectedLocationIds([]);
+      } else if (type === 'blogs') {
+        await Promise.all(ids.map((id) => deleteBlog(id)));
+        setBlogsList((prev) => prev.filter((b) => !ids.includes(b.id)));
+        setSelectedBlogIds([]);
+      } else if (type === 'leads') {
+        await Promise.all(ids.map((id) => deleteEnquiry(id)));
+        setEnquiries((prev) => prev.filter((e) => !ids.includes(e.id)));
+        setSelectedLeadIds([]);
+      } else if (type === 'users') {
+        const validIds = ids.filter((id) => id !== user?.id);
+        await Promise.all(validIds.map((id) => deleteAdminUser(id)));
+        setUsersList((prev) => prev.filter((u) => !validIds.includes(u.id)));
+        setSelectedUserIds([]);
+      }
+    } catch (err: any) {
+      alert(err.message || 'Failed to bulk delete selected items');
+    } finally {
+      setBulkDeleting(false);
+      setBulkDeleteConfirm(null);
+    }
+  };
+
+  const toggleSelectAll = (
+    pageItems: { id: number }[],
+    selectedIds: number[],
+    setSelectedIds: React.Dispatch<React.SetStateAction<number[]>>
+  ) => {
+    const pageItemIds = pageItems.map((item) => item.id);
+    const allSelectedOnPage = pageItemIds.length > 0 && pageItemIds.every((id) => selectedIds.includes(id));
+
+    if (allSelectedOnPage) {
+      setSelectedIds((prev) => prev.filter((id) => !pageItemIds.includes(id)));
+    } else {
+      setSelectedIds((prev) => Array.from(new Set([...prev, ...pageItemIds])));
+    }
+  };
+
+  const toggleSelectItem = (
+    id: number,
+    setSelectedIds: React.Dispatch<React.SetStateAction<number[]>>
+  ) => {
+    setSelectedIds((prev) =>
+      prev.includes(id) ? prev.filter((item) => item !== id) : [...prev, id]
+    );
+  };
+
   const handleEnquiryStatusChange = async (id: number, status: string) => {
     try {
       await updateEnquiryStatus(id, status);
@@ -674,6 +767,92 @@ export default function Admin() {
     }
     return true;
   });
+
+  // Filter Functions for Admin Tabs
+  const filteredProperties = properties.filter((prop) => {
+    if (!propertySearch.trim()) return true;
+    const q = propertySearch.toLowerCase();
+    const matchTitle = prop.title?.toLowerCase().includes(q);
+    const matchCity = prop.location?.city?.toLowerCase().includes(q);
+    const matchType = prop.property_type?.name?.toLowerCase().includes(q);
+    const matchPrice = prop.formatted_price?.toLowerCase().includes(q) || String(prop.price).includes(q);
+    return matchTitle || matchCity || matchType || matchPrice;
+  });
+
+  const filteredLocations = locationsList.filter((loc) => {
+    if (!locationSearch.trim()) return true;
+    const q = locationSearch.toLowerCase();
+    const matchName = loc.name?.toLowerCase().includes(q);
+    const matchCity = loc.city?.toLowerCase().includes(q);
+    const matchState = loc.state?.toLowerCase().includes(q);
+    return matchName || matchCity || matchState;
+  });
+
+  const filteredBlogsList = blogsList.filter((blog) => {
+    if (!blogSearch.trim()) return true;
+    const q = blogSearch.toLowerCase();
+    const matchTitle = blog.title?.toLowerCase().includes(q);
+    const matchCat = blog.category?.name?.toLowerCase().includes(q);
+    const matchAuthor = blog.author_name?.toLowerCase().includes(q);
+    return matchTitle || matchCat || matchAuthor;
+  });
+
+  const filteredLeads = enquiries.filter((enq) => {
+    if (!leadSearch.trim()) return true;
+    const q = leadSearch.toLowerCase();
+    const matchName = enq.name?.toLowerCase().includes(q);
+    const matchEmail = enq.email?.toLowerCase().includes(q);
+    const matchPhone = enq.phone?.toLowerCase().includes(q);
+    const matchProp = enq.property?.title?.toLowerCase().includes(q);
+    return matchName || matchEmail || matchPhone || matchProp;
+  });
+
+  const filteredUsersList = usersList.filter((u) => {
+    if (!userSearch.trim()) return true;
+    const q = userSearch.toLowerCase();
+    const matchName = u.name?.toLowerCase().includes(q);
+    const matchEmail = u.email?.toLowerCase().includes(q);
+    const matchPhone = u.phone?.toLowerCase().includes(q);
+    const matchRole = u.role?.toLowerCase().includes(q);
+    return matchName || matchEmail || matchPhone || matchRole;
+  });
+
+  // Tab Pagination Calculations
+  const totalPropertyPages = Math.ceil(filteredProperties.length / itemsPerPage);
+  const paginatedProperties = filteredProperties.slice(
+    (propertyPage - 1) * itemsPerPage,
+    propertyPage * itemsPerPage
+  );
+
+  const totalLocationPages = Math.ceil(filteredLocations.length / itemsPerPage);
+  const paginatedLocations = filteredLocations.slice(
+    (locationPage - 1) * itemsPerPage,
+    locationPage * itemsPerPage
+  );
+
+  const totalBlogPages = Math.ceil(filteredBlogsList.length / itemsPerPage);
+  const paginatedBlogs = filteredBlogsList.slice(
+    (blogPage - 1) * itemsPerPage,
+    blogPage * itemsPerPage
+  );
+
+  const totalLeadPages = Math.ceil(filteredLeads.length / itemsPerPage);
+  const paginatedLeads = filteredLeads.slice(
+    (leadPage - 1) * itemsPerPage,
+    leadPage * itemsPerPage
+  );
+
+  const totalVisitPages = Math.ceil(filteredAppointments.length / itemsPerPage);
+  const paginatedVisits = filteredAppointments.slice(
+    (visitPage - 1) * itemsPerPage,
+    visitPage * itemsPerPage
+  );
+
+  const totalUserPages = Math.ceil(filteredUsersList.length / itemsPerPage);
+  const paginatedUsers = filteredUsersList.slice(
+    (userPage - 1) * itemsPerPage,
+    userPage * itemsPerPage
+  );
 
   const navMenuItems = [
     { id: 'overview', label: 'Overview', icon: LayoutDashboard, badge: null, path: '/admin/overview' },
@@ -976,17 +1155,67 @@ export default function Admin() {
                   </h2>
                   <p className="text-xs text-slate-400">Add, edit, review status, toggle publishing, promote featured listings, or remove properties.</p>
                 </div>
-                <button
-                  onClick={handleOpenAddProperty}
-                  className="px-4 py-2 rounded-xl bg-amber-400 hover:bg-amber-300 text-slate-950 font-bold text-xs flex items-center gap-2 shadow-lg shadow-amber-400/20 cursor-pointer shrink-0"
-                >
-                  <Plus className="w-4 h-4" />
-                  Add New Listing
-                </button>
+                <div className="flex flex-wrap items-center gap-3 shrink-0">
+                  <div className="relative">
+                    <input
+                      type="text"
+                      placeholder="Search property, city, price..."
+                      value={propertySearch}
+                      onChange={(e) => {
+                        setPropertySearch(e.target.value);
+                        setPropertyPage(1);
+                      }}
+                      className="pl-8 pr-3 py-2 rounded-xl bg-slate-950 border border-slate-800 text-xs text-white placeholder:text-slate-500 focus:outline-none focus:border-amber-400 w-48 sm:w-60 transition-colors"
+                    />
+                    <Search className="w-3.5 h-3.5 text-slate-500 absolute left-2.5 top-2.5" />
+                  </div>
+                  <button
+                    onClick={handleOpenAddProperty}
+                    className="px-4 py-2 rounded-xl bg-amber-400 hover:bg-amber-300 text-slate-950 font-bold text-xs flex items-center gap-2 shadow-lg shadow-amber-400/20 cursor-pointer shrink-0"
+                  >
+                    <Plus className="w-4 h-4" />
+                    Add New Listing
+                  </button>
+                </div>
               </div>
+
+              {selectedPropertyIds.length > 0 && (
+                <div className="flex items-center justify-between bg-rose-500/10 border border-rose-500/30 p-3 rounded-2xl text-xs text-rose-300">
+                  <span className="font-semibold">
+                    {selectedPropertyIds.length} listing{selectedPropertyIds.length > 1 ? 's' : ''} selected
+                  </span>
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={() => setSelectedPropertyIds([])}
+                      className="px-3 py-1 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 cursor-pointer font-medium"
+                    >
+                      Clear Selection
+                    </button>
+                    <button
+                      onClick={() => setBulkDeleteConfirm({ type: 'properties', ids: selectedPropertyIds })}
+                      className="px-3.5 py-1 rounded-xl bg-rose-600 hover:bg-rose-500 text-white font-bold cursor-pointer flex items-center gap-1.5 shadow-md shadow-rose-600/30"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                      Delete Selected ({selectedPropertyIds.length})
+                    </button>
+                  </div>
+                </div>
+              )}
+
               <table className="w-full text-left text-xs text-slate-300">
                 <thead className="bg-slate-950 text-slate-400 uppercase text-[10px] font-bold tracking-wider">
                   <tr>
+                    <th className="p-3 w-10 text-center">
+                      <input
+                        type="checkbox"
+                        checked={
+                          paginatedProperties.length > 0 &&
+                          paginatedProperties.every((p) => selectedPropertyIds.includes(p.id))
+                        }
+                        onChange={() => toggleSelectAll(paginatedProperties, selectedPropertyIds, setSelectedPropertyIds)}
+                        className="rounded border-slate-700 bg-slate-950 text-rose-500 focus:ring-rose-500/40 w-4 h-4 cursor-pointer"
+                      />
+                    </th>
                     <th className="p-3">Property</th>
                     <th className="p-3">Type</th>
                     <th className="p-3">City</th>
@@ -997,8 +1226,16 @@ export default function Admin() {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-800">
-                  {properties.map((prop) => (
+                  {paginatedProperties.map((prop) => (
                     <tr key={prop.id} className="hover:bg-slate-800/40">
+                      <td className="p-3 text-center">
+                        <input
+                          type="checkbox"
+                          checked={selectedPropertyIds.includes(prop.id)}
+                          onChange={() => toggleSelectItem(prop.id, setSelectedPropertyIds)}
+                          className="rounded border-slate-700 bg-slate-950 text-rose-500 focus:ring-rose-500/40 w-4 h-4 cursor-pointer"
+                        />
+                      </td>
                       <td className="p-3 font-semibold text-white max-w-[240px] truncate">{prop.title}</td>
                       <td className="p-3 text-slate-400">{prop.property_type?.name}</td>
                       <td className="p-3 text-slate-400">{prop.location?.city}</td>
@@ -1052,6 +1289,11 @@ export default function Admin() {
                   ))}
                 </tbody>
               </table>
+              <Pagination
+                currentPage={propertyPage}
+                totalPages={totalPropertyPages}
+                onPageChange={setPropertyPage}
+              />
             </div>
           )}
 
@@ -1066,19 +1308,68 @@ export default function Admin() {
                   </h2>
                   <p className="text-xs text-slate-400">Add, edit, or remove cities & metro locations for property filtering.</p>
                 </div>
-                <button
-                  onClick={handleOpenAddLocation}
-                  className="px-4 py-2 rounded-xl bg-amber-400 hover:bg-amber-300 text-slate-950 font-bold text-xs flex items-center gap-2 shadow-lg shadow-amber-400/20 cursor-pointer"
-                >
-                  <Plus className="w-4 h-4" />
-                  Add New Location
-                </button>
+                <div className="flex flex-wrap items-center gap-3 shrink-0">
+                  <div className="relative">
+                    <input
+                      type="text"
+                      placeholder="Search location, city, state..."
+                      value={locationSearch}
+                      onChange={(e) => {
+                        setLocationSearch(e.target.value);
+                        setLocationPage(1);
+                      }}
+                      className="pl-8 pr-3 py-2 rounded-xl bg-slate-950 border border-slate-800 text-xs text-white placeholder:text-slate-500 focus:outline-none focus:border-amber-400 w-48 sm:w-60 transition-colors"
+                    />
+                    <Search className="w-3.5 h-3.5 text-slate-500 absolute left-2.5 top-2.5" />
+                  </div>
+                  <button
+                    onClick={handleOpenAddLocation}
+                    className="px-4 py-2 rounded-xl bg-amber-400 hover:bg-amber-300 text-slate-950 font-bold text-xs flex items-center gap-2 shadow-lg shadow-amber-400/20 cursor-pointer"
+                  >
+                    <Plus className="w-4 h-4" />
+                    Add New Location
+                  </button>
+                </div>
               </div>
+
+              {selectedLocationIds.length > 0 && (
+                <div className="flex items-center justify-between bg-rose-500/10 border border-rose-500/30 p-3 rounded-2xl text-xs text-rose-300">
+                  <span className="font-semibold">
+                    {selectedLocationIds.length} location{selectedLocationIds.length > 1 ? 's' : ''} selected
+                  </span>
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={() => setSelectedLocationIds([])}
+                      className="px-3 py-1 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 cursor-pointer font-medium"
+                    >
+                      Clear Selection
+                    </button>
+                    <button
+                      onClick={() => setBulkDeleteConfirm({ type: 'locations', ids: selectedLocationIds })}
+                      className="px-3.5 py-1 rounded-xl bg-rose-600 hover:bg-rose-500 text-white font-bold cursor-pointer flex items-center gap-1.5 shadow-md shadow-rose-600/30"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                      Delete Selected ({selectedLocationIds.length})
+                    </button>
+                  </div>
+                </div>
+              )}
 
               <div className="overflow-x-auto">
                 <table className="w-full text-left text-xs text-slate-300">
                   <thead className="bg-slate-950 text-slate-400 uppercase text-[10px] font-bold tracking-wider">
                     <tr>
+                      <th className="p-3 w-10 text-center">
+                        <input
+                          type="checkbox"
+                          checked={
+                            paginatedLocations.length > 0 &&
+                            paginatedLocations.every((l) => selectedLocationIds.includes(l.id))
+                          }
+                          onChange={() => toggleSelectAll(paginatedLocations, selectedLocationIds, setSelectedLocationIds)}
+                          className="rounded border-slate-700 bg-slate-950 text-rose-500 focus:ring-rose-500/40 w-4 h-4 cursor-pointer"
+                        />
+                      </th>
                       <th className="p-3">Location Name</th>
                       <th className="p-3">City</th>
                       <th className="p-3">State</th>
@@ -1088,8 +1379,16 @@ export default function Admin() {
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-800">
-                    {locationsList.map((loc) => (
+                    {paginatedLocations.map((loc) => (
                       <tr key={loc.id} className="hover:bg-slate-800/40">
+                        <td className="p-3 text-center">
+                          <input
+                            type="checkbox"
+                            checked={selectedLocationIds.includes(loc.id)}
+                            onChange={() => toggleSelectItem(loc.id, setSelectedLocationIds)}
+                            className="rounded border-slate-700 bg-slate-950 text-rose-500 focus:ring-rose-500/40 w-4 h-4 cursor-pointer"
+                          />
+                        </td>
                         <td className="p-3 font-semibold text-white flex items-center gap-2.5">
                           {loc.image && (
                             <img src={loc.image} alt={loc.name} className="w-7 h-7 rounded-lg object-cover" />
@@ -1133,6 +1432,11 @@ export default function Admin() {
                   </tbody>
                 </table>
               </div>
+              <Pagination
+                currentPage={locationPage}
+                totalPages={totalLocationPages}
+                onPageChange={setLocationPage}
+              />
             </div>
           )}
 
@@ -1149,19 +1453,68 @@ export default function Admin() {
                     Create, edit, publish, or remove research articles, market guides, and editorial content.
                   </p>
                 </div>
-                <button
-                  onClick={handleOpenAddBlog}
-                  className="px-4 py-2 rounded-xl bg-amber-400 hover:bg-amber-300 text-slate-950 font-bold text-xs flex items-center gap-2 shadow-lg shadow-amber-400/20 cursor-pointer shrink-0"
-                >
-                  <Plus className="w-4 h-4" />
-                  Add New Article
-                </button>
+                <div className="flex flex-wrap items-center gap-3 shrink-0">
+                  <div className="relative">
+                    <input
+                      type="text"
+                      placeholder="Search title, category, author..."
+                      value={blogSearch}
+                      onChange={(e) => {
+                        setBlogSearch(e.target.value);
+                        setBlogPage(1);
+                      }}
+                      className="pl-8 pr-3 py-2 rounded-xl bg-slate-950 border border-slate-800 text-xs text-white placeholder:text-slate-500 focus:outline-none focus:border-amber-400 w-48 sm:w-60 transition-colors"
+                    />
+                    <Search className="w-3.5 h-3.5 text-slate-500 absolute left-2.5 top-2.5" />
+                  </div>
+                  <button
+                    onClick={handleOpenAddBlog}
+                    className="px-4 py-2 rounded-xl bg-amber-400 hover:bg-amber-300 text-slate-950 font-bold text-xs flex items-center gap-2 shadow-lg shadow-amber-400/20 cursor-pointer shrink-0"
+                  >
+                    <Plus className="w-4 h-4" />
+                    Add New Article
+                  </button>
+                </div>
               </div>
+
+              {selectedBlogIds.length > 0 && (
+                <div className="flex items-center justify-between bg-rose-500/10 border border-rose-500/30 p-3 rounded-2xl text-xs text-rose-300">
+                  <span className="font-semibold">
+                    {selectedBlogIds.length} article{selectedBlogIds.length > 1 ? 's' : ''} selected
+                  </span>
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={() => setSelectedBlogIds([])}
+                      className="px-3 py-1 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 cursor-pointer font-medium"
+                    >
+                      Clear Selection
+                    </button>
+                    <button
+                      onClick={() => setBulkDeleteConfirm({ type: 'blogs', ids: selectedBlogIds })}
+                      className="px-3.5 py-1 rounded-xl bg-rose-600 hover:bg-rose-500 text-white font-bold cursor-pointer flex items-center gap-1.5 shadow-md shadow-rose-600/30"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                      Delete Selected ({selectedBlogIds.length})
+                    </button>
+                  </div>
+                </div>
+              )}
 
               <div className="overflow-x-auto">
                 <table className="w-full text-left text-xs text-slate-300">
                   <thead className="bg-slate-950 text-slate-400 uppercase text-[10px] font-bold tracking-wider">
                     <tr>
+                      <th className="p-3 w-10 text-center">
+                        <input
+                          type="checkbox"
+                          checked={
+                            paginatedBlogs.length > 0 &&
+                            paginatedBlogs.every((b) => selectedBlogIds.includes(b.id))
+                          }
+                          onChange={() => toggleSelectAll(paginatedBlogs, selectedBlogIds, setSelectedBlogIds)}
+                          className="rounded border-slate-700 bg-slate-950 text-rose-500 focus:ring-rose-500/40 w-4 h-4 cursor-pointer"
+                        />
+                      </th>
                       <th className="p-3">Article Title</th>
                       <th className="p-3">Category</th>
                       <th className="p-3">Author</th>
@@ -1170,8 +1523,16 @@ export default function Admin() {
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-800">
-                    {blogsList.map((blog) => (
+                    {paginatedBlogs.map((blog) => (
                       <tr key={blog.id} className="hover:bg-slate-800/40">
+                        <td className="p-3 text-center">
+                          <input
+                            type="checkbox"
+                            checked={selectedBlogIds.includes(blog.id)}
+                            onChange={() => toggleSelectItem(blog.id, setSelectedBlogIds)}
+                            className="rounded border-slate-700 bg-slate-950 text-rose-500 focus:ring-rose-500/40 w-4 h-4 cursor-pointer"
+                          />
+                        </td>
                         <td className="p-3 font-semibold text-white max-w-[280px]">
                           <div className="flex items-center gap-3">
                             {blog.image && (
@@ -1229,13 +1590,18 @@ export default function Admin() {
                   </tbody>
                 </table>
               </div>
+              <Pagination
+                currentPage={blogPage}
+                totalPages={totalBlogPages}
+                onPageChange={setBlogPage}
+              />
             </div>
           )}
 
           {/* LEADS TAB */}
           {activeTab === 'leads' && (
             <div className="bg-slate-900 border border-slate-800 rounded-3xl p-6 sm:p-8 space-y-6 shadow-xl">
-              <div className="flex items-center justify-between border-b border-slate-800 pb-4">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-800 pb-4">
                 <div>
                   <h2 className="text-xl font-bold text-white flex items-center gap-2">
                     <FileText className="w-5 h-5 text-blue-400" />
@@ -1245,13 +1611,60 @@ export default function Admin() {
                     Review incoming buyer & seller inquiries, contact details, and update lead resolution statuses.
                   </p>
                 </div>
+                <div className="relative shrink-0">
+                  <input
+                    type="text"
+                    placeholder="Search client, email, property..."
+                    value={leadSearch}
+                    onChange={(e) => {
+                      setLeadSearch(e.target.value);
+                      setLeadPage(1);
+                    }}
+                    className="pl-8 pr-3 py-2 rounded-xl bg-slate-950 border border-slate-800 text-xs text-white placeholder:text-slate-500 focus:outline-none focus:border-amber-400 w-48 sm:w-60 transition-colors"
+                  />
+                  <Search className="w-3.5 h-3.5 text-slate-500 absolute left-2.5 top-2.5" />
+                </div>
               </div>
+
+              {selectedLeadIds.length > 0 && (
+                <div className="flex items-center justify-between bg-rose-500/10 border border-rose-500/30 p-3 rounded-2xl text-xs text-rose-300">
+                  <span className="font-semibold">
+                    {selectedLeadIds.length} lead{selectedLeadIds.length > 1 ? 's' : ''} selected
+                  </span>
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={() => setSelectedLeadIds([])}
+                      className="px-3 py-1 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 cursor-pointer font-medium"
+                    >
+                      Clear Selection
+                    </button>
+                    <button
+                      onClick={() => setBulkDeleteConfirm({ type: 'leads', ids: selectedLeadIds })}
+                      className="px-3.5 py-1 rounded-xl bg-rose-600 hover:bg-rose-500 text-white font-bold cursor-pointer flex items-center gap-1.5 shadow-md shadow-rose-600/30"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                      Delete Selected ({selectedLeadIds.length})
+                    </button>
+                  </div>
+                </div>
+              )}
 
               <div className="overflow-x-auto pb-4">
                 <table className="w-full text-left text-xs text-slate-300">
                   <thead className="bg-slate-950 text-slate-400 uppercase text-[10px] font-bold tracking-wider">
                     <tr>
-                      <th className="p-3.5 rounded-l-xl">Client Name</th>
+                      <th className="p-3.5 w-10 text-center rounded-l-xl">
+                        <input
+                          type="checkbox"
+                          checked={
+                            paginatedLeads.length > 0 &&
+                            paginatedLeads.every((e) => selectedLeadIds.includes(e.id))
+                          }
+                          onChange={() => toggleSelectAll(paginatedLeads, selectedLeadIds, setSelectedLeadIds)}
+                          className="rounded border-slate-700 bg-slate-950 text-rose-500 focus:ring-rose-500/40 w-4 h-4 cursor-pointer"
+                        />
+                      </th>
+                      <th className="p-3.5">Client Name</th>
                       <th className="p-3.5">Contact Details</th>
                       <th className="p-3.5">Interested Property</th>
                       <th className="p-3.5">Lead Status</th>
@@ -1259,8 +1672,16 @@ export default function Admin() {
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-800/80">
-                    {enquiries.map((enq) => (
+                    {paginatedLeads.map((enq) => (
                       <tr key={enq.id} className="hover:bg-slate-800/50 transition-colors group">
+                        <td className="p-3.5 text-center">
+                          <input
+                            type="checkbox"
+                            checked={selectedLeadIds.includes(enq.id)}
+                            onChange={() => toggleSelectItem(enq.id, setSelectedLeadIds)}
+                            className="rounded border-slate-700 bg-slate-950 text-rose-500 focus:ring-rose-500/40 w-4 h-4 cursor-pointer"
+                          />
+                        </td>
                         <td
                           className="p-3.5 font-bold text-white group-hover:text-amber-400 cursor-pointer transition-colors"
                           onClick={() => setViewingEnquiry(enq)}
@@ -1292,21 +1713,36 @@ export default function Admin() {
                             className="w-36"
                           />
                         </td>
-                        <td className="p-3.5 text-right">
-                          <button
-                            type="button"
-                            onClick={() => setViewingEnquiry(enq)}
-                            className="px-3 py-1.5 rounded-xl bg-blue-500/10 hover:bg-blue-500/20 text-blue-400 border border-blue-500/30 text-xs font-bold transition-all cursor-pointer inline-flex items-center gap-1.5 whitespace-nowrap shadow-sm shadow-blue-500/10"
-                          >
-                            <Eye className="w-3.5 h-3.5" />
-                            <span>View Lead</span>
-                          </button>
+                        <td className="p-3.5 text-right whitespace-nowrap">
+                          <div className="flex items-center justify-end gap-1.5">
+                            <button
+                              type="button"
+                              onClick={() => setViewingEnquiry(enq)}
+                              className="px-3 py-1.5 rounded-xl bg-blue-500/10 hover:bg-blue-500/20 text-blue-400 border border-blue-500/30 text-xs font-bold transition-all cursor-pointer inline-flex items-center gap-1.5 whitespace-nowrap shadow-sm shadow-blue-500/10"
+                            >
+                              <Eye className="w-3.5 h-3.5" />
+                              <span>View Lead</span>
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => setBulkDeleteConfirm({ type: 'leads', ids: [enq.id] })}
+                              className="p-1.5 rounded-lg bg-rose-500/20 hover:bg-rose-500/30 text-rose-400 cursor-pointer"
+                              title="Delete Lead"
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </button>
+                          </div>
                         </td>
                       </tr>
                     ))}
                   </tbody>
                 </table>
               </div>
+              <Pagination
+                currentPage={leadPage}
+                totalPages={totalLeadPages}
+                onPageChange={setLeadPage}
+              />
             </div>
           )}
 
@@ -1331,7 +1767,10 @@ export default function Admin() {
                       type="text"
                       placeholder="Search property, client, agent..."
                       value={appointmentSearch}
-                      onChange={(e) => setAppointmentSearch(e.target.value)}
+                      onChange={(e) => {
+                        setAppointmentSearch(e.target.value);
+                        setVisitPage(1);
+                      }}
                       className="pl-8 pr-3 py-2 rounded-xl bg-slate-950 border border-slate-800 text-xs text-white placeholder:text-slate-500 focus:outline-none focus:border-amber-400 w-48 sm:w-56"
                     />
                     <Search className="w-3.5 h-3.5 text-slate-500 absolute left-2.5 top-2.5" />
@@ -1339,7 +1778,10 @@ export default function Admin() {
 
                   <CustomSelect
                     value={appointmentAgentFilter}
-                    onChange={(val) => setAppointmentAgentFilter(val)}
+                    onChange={(val) => {
+                      setAppointmentAgentFilter(val);
+                      setVisitPage(1);
+                    }}
                     options={[
                       { value: '', label: 'All Agents' },
                       ...agentsList.map((a) => ({
@@ -1353,7 +1795,10 @@ export default function Admin() {
 
                   <CustomSelect
                     value={appointmentStatusFilter}
-                    onChange={(val) => setAppointmentStatusFilter(val)}
+                    onChange={(val) => {
+                      setAppointmentStatusFilter(val);
+                      setVisitPage(1);
+                    }}
                     options={[
                       { value: '', label: 'All Statuses' },
                       { value: 'pending', label: 'Pending' },
@@ -1371,7 +1816,7 @@ export default function Admin() {
               <div className="space-y-4">
                 {filteredAppointments.length > 0 ? (
                   <div className="space-y-4">
-                    {filteredAppointments.map((app) => {
+                    {paginatedVisits.map((app) => {
                       const prop = app.property;
                       const agent = app.agent;
                       const primaryImg =
@@ -1522,6 +1967,11 @@ export default function Admin() {
                   </div>
                 )}
               </div>
+              <Pagination
+                currentPage={visitPage}
+                totalPages={totalVisitPages}
+                onPageChange={setVisitPage}
+              />
             </div>
           )}
 
@@ -1536,18 +1986,67 @@ export default function Admin() {
                   </h2>
                   <p className="text-xs text-slate-400">Create new user accounts, edit details, assign roles (Admin, Agent, Buyer), or remove accounts.</p>
                 </div>
-                <button
-                  onClick={handleOpenAddUser}
-                  className="px-4 py-2 rounded-xl bg-amber-400 hover:bg-amber-300 text-slate-950 font-bold text-xs flex items-center gap-2 shadow-lg shadow-amber-400/20 cursor-pointer shrink-0"
-                >
-                  <UserPlus className="w-4 h-4" />
-                  Add New User
-                </button>
+                <div className="flex flex-wrap items-center gap-3 shrink-0">
+                  <div className="relative">
+                    <input
+                      type="text"
+                      placeholder="Search name, email, role..."
+                      value={userSearch}
+                      onChange={(e) => {
+                        setUserSearch(e.target.value);
+                        setUserPage(1);
+                      }}
+                      className="pl-8 pr-3 py-2 rounded-xl bg-slate-950 border border-slate-800 text-xs text-white placeholder:text-slate-500 focus:outline-none focus:border-amber-400 w-48 sm:w-60 transition-colors"
+                    />
+                    <Search className="w-3.5 h-3.5 text-slate-500 absolute left-2.5 top-2.5" />
+                  </div>
+                  <button
+                    onClick={handleOpenAddUser}
+                    className="px-4 py-2 rounded-xl bg-amber-400 hover:bg-amber-300 text-slate-950 font-bold text-xs flex items-center gap-2 shadow-lg shadow-amber-400/20 cursor-pointer shrink-0"
+                  >
+                    <UserPlus className="w-4 h-4" />
+                    Add New User
+                  </button>
+                </div>
               </div>
+
+              {selectedUserIds.length > 0 && (
+                <div className="flex items-center justify-between bg-rose-500/10 border border-rose-500/30 p-3 rounded-2xl text-xs text-rose-300">
+                  <span className="font-semibold">
+                    {selectedUserIds.length} user{selectedUserIds.length > 1 ? 's' : ''} selected
+                  </span>
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={() => setSelectedUserIds([])}
+                      className="px-3 py-1 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 cursor-pointer font-medium"
+                    >
+                      Clear Selection
+                    </button>
+                    <button
+                      onClick={() => setBulkDeleteConfirm({ type: 'users', ids: selectedUserIds })}
+                      className="px-3.5 py-1 rounded-xl bg-rose-600 hover:bg-rose-500 text-white font-bold cursor-pointer flex items-center gap-1.5 shadow-md shadow-rose-600/30"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                      Delete Selected ({selectedUserIds.length})
+                    </button>
+                  </div>
+                </div>
+              )}
 
               <table className="w-full text-left text-xs text-slate-300">
                 <thead className="bg-slate-950 text-slate-400 uppercase text-[10px] font-bold tracking-wider">
                   <tr>
+                    <th className="p-3 w-10 text-center">
+                      <input
+                        type="checkbox"
+                        checked={
+                          paginatedUsers.length > 0 &&
+                          paginatedUsers.every((u) => selectedUserIds.includes(u.id))
+                        }
+                        onChange={() => toggleSelectAll(paginatedUsers, selectedUserIds, setSelectedUserIds)}
+                        className="rounded border-slate-700 bg-slate-950 text-rose-500 focus:ring-rose-500/40 w-4 h-4 cursor-pointer"
+                      />
+                    </th>
                     <th className="p-3">Name</th>
                     <th className="p-3">Email</th>
                     <th className="p-3">Phone</th>
@@ -1556,8 +2055,17 @@ export default function Admin() {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-800">
-                  {usersList.map((u) => (
+                  {paginatedUsers.map((u) => (
                     <tr key={u.id} className="hover:bg-slate-800/40">
+                      <td className="p-3 text-center">
+                        <input
+                          type="checkbox"
+                          disabled={u.id === user?.id}
+                          checked={selectedUserIds.includes(u.id)}
+                          onChange={() => toggleSelectItem(u.id, setSelectedUserIds)}
+                          className="rounded border-slate-700 bg-slate-950 text-rose-500 focus:ring-rose-500/40 w-4 h-4 cursor-pointer disabled:opacity-30 disabled:cursor-not-allowed"
+                        />
+                      </td>
                       <td className="p-3 font-semibold text-white flex items-center gap-2">
                         <img
                           src={u.avatar || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&q=80&w=100'}
@@ -1605,6 +2113,11 @@ export default function Admin() {
                   ))}
                 </tbody>
               </table>
+              <Pagination
+                currentPage={userPage}
+                totalPages={totalUserPages}
+                onPageChange={setUserPage}
+              />
             </div>
           )}
 
@@ -2716,6 +3229,28 @@ export default function Admin() {
         loading={deletingItem}
         onConfirm={executeDelete}
         onCancel={() => setDeleteConfirm(null)}
+      />
+
+      {/* BULK DELETE CONFIRMATION MODAL */}
+      <ConfirmModal
+        isOpen={!!bulkDeleteConfirm}
+        title={`Bulk Delete Selected ${
+          bulkDeleteConfirm?.type === 'properties'
+            ? 'Properties'
+            : bulkDeleteConfirm?.type === 'locations'
+            ? 'Locations'
+            : bulkDeleteConfirm?.type === 'blogs'
+            ? 'Articles'
+            : bulkDeleteConfirm?.type === 'leads'
+            ? 'Customer Leads'
+            : 'User Accounts'
+        }`}
+        message={`Are you sure you want to permanently delete the ${bulkDeleteConfirm?.ids.length || 0} selected item(s)? This action cannot be undone.`}
+        confirmText={`Delete ${bulkDeleteConfirm?.ids.length || 0} Item(s)`}
+        cancelText="Cancel"
+        loading={bulkDeleting}
+        onConfirm={handleExecuteBulkDelete}
+        onCancel={() => setBulkDeleteConfirm(null)}
       />
     </div>
   );

@@ -84,6 +84,7 @@ Route::middleware('auth:sanctum')->group(function () {
             Route::get('/stats', [AdminController::class, 'stats']);
             Route::get('/appointments', [AdminController::class, 'appointmentsList']);
             Route::patch('/enquiries/{id}', [AdminController::class, 'updateEnquiryStatus']);
+            Route::delete('/enquiries/{id}', [AdminController::class, 'deleteEnquiry']);
             Route::patch('/appointments/{id}', [AdminController::class, 'updateAppointmentStatus']);
             Route::post('/properties/{id}/publish', [AdminController::class, 'togglePropertyPublish']);
             Route::post('/properties/{id}/featured', [AdminController::class, 'togglePropertyFeatured']);

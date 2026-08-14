@@ -50,6 +50,14 @@ class AdminController extends Controller
         ]);
     }
 
+    public function deleteEnquiry(int $id)
+    {
+        $enquiry = Enquiry::findOrFail($id);
+        $enquiry->delete();
+
+        return response()->json(['message' => 'Enquiry deleted successfully']);
+    }
+
     public function updateAppointmentStatus(Request $request, int $id)
     {
         $validated = $request->validate([
