@@ -169,6 +169,31 @@ export interface Faq {
   category: string;
 }
 
+export interface VisitorLog {
+  id: number;
+  user_id?: number;
+  ip_address: string;
+  country?: string;
+  state?: string;
+  city?: string;
+  timezone?: string;
+  device_type?: string;
+  os?: string;
+  browser?: string;
+  browser_version?: string;
+  screen_resolution?: string;
+  language?: string;
+  referrer_url?: string;
+  landing_page?: string;
+  page_url: string;
+  utm_params?: string;
+  session_id?: string;
+  visitor_status?: 'New Visitor' | 'Returning Visitor' | string;
+  user_agent?: string;
+  created_at: string;
+  user?: User;
+}
+
 export interface PaginatedResponse<T> {
   data: T[];
   links?: {

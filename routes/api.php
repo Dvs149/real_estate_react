@@ -13,6 +13,7 @@ use App\Http\Controllers\Api\LocationController;
 use App\Http\Controllers\Api\PropertyController;
 use App\Http\Controllers\Api\PropertyTypeController;
 use App\Http\Controllers\Api\TestimonialController;
+use App\Http\Controllers\Api\VisitorLogController;
 use Illuminate\Support\Facades\Route;
 
 use App\Http\Controllers\Api\SettingController;
@@ -50,9 +51,10 @@ Route::get('/blog-categories', [BlogController::class, 'categories']);
 Route::get('/testimonials', [TestimonialController::class, 'index']);
 Route::get('/faqs', [FaqController::class, 'index']);
 
-// Public Lead / Visit Submission
+// Public Lead / Visit Submission & Visitor Logging
 Route::post('/enquiries', [EnquiryController::class, 'store']);
 Route::post('/appointments', [AppointmentController::class, 'store']);
+Route::post('/visitor-log', [VisitorLogController::class, 'log']);
 
 // Protected User Routes (authenticated users)
 Route::middleware('auth:sanctum')->group(function () {
@@ -88,6 +90,7 @@ Route::middleware('auth:sanctum')->group(function () {
             Route::delete('/enquiries/{id}', [AdminController::class, 'deleteEnquiry']);
             Route::patch('/appointments/{id}', [AdminController::class, 'updateAppointmentStatus']);
             Route::post('/properties/{id}/publish', [AdminController::class, 'togglePropertyPublish']);
+            Route::get('/visitor-logs', [VisitorLogController::class, 'index']);
             Route::post('/properties/{id}/featured', [AdminController::class, 'togglePropertyFeatured']);
             Route::get('/users', [AdminController::class, 'usersList']);
             Route::post('/users', [AdminController::class, 'createUser']);

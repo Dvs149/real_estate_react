@@ -33,8 +33,10 @@ import {
   deleteBlog,
   toggleBlogPublish,
   SiteSettings,
+  getAdminVisitorLogs,
 } from '../services/api';
-import { Property, PropertyType, Agent, User, Enquiry, Appointment, Location, Blog, BlogCategory } from '../types';
+import { Property, PropertyType, Agent, User, Enquiry, Appointment, Location, Blog, BlogCategory, VisitorLog } from '../types';
+import VisitorTelemetryModal from '../components/VisitorTelemetryModal';
 import CustomSelect, { SelectOption } from '../components/CustomSelect';
 import CustomDatePicker from '../components/CustomDatePicker';
 import ConfirmModal from '../components/ConfirmModal';
@@ -69,6 +71,8 @@ import {
   Mail,
   Phone,
   Check,
+  Activity,
+  Globe,
 } from 'lucide-react';
 
 export default function Admin() {
@@ -77,12 +81,12 @@ export default function Admin() {
   const [searchParams] = useSearchParams();
   const { user, loading: authLoading } = useAuth();
 
-  const [activeTab, setActiveTab] = useState<'overview' | 'properties' | 'locations' | 'blogs' | 'leads' | 'visits' | 'users' | 'settings'>(() => {
-    if (pathTab && ['overview', 'properties', 'locations', 'blogs', 'leads', 'visits', 'users', 'settings'].includes(pathTab)) {
+  const [activeTab, setActiveTab] = useState<'overview' | 'properties' | 'locations' | 'blogs' | 'leads' | 'visits' | 'users' | 'settings' | 'visitors'>(() => {
+    if (pathTab && ['overview', 'properties', 'locations', 'blogs', 'leads', 'visits', 'users', 'settings', 'visitors'].includes(pathTab)) {
       return pathTab as any;
     }
     const queryTab = searchParams.get('tab');
-    if (queryTab && ['overview', 'properties', 'locations', 'blogs', 'leads', 'visits', 'users', 'settings'].includes(queryTab)) {
+    if (queryTab && ['overview', 'properties', 'locations', 'blogs', 'leads', 'visits', 'users', 'settings', 'visitors'].includes(queryTab)) {
       return queryTab as any;
     }
     return 'overview';
@@ -240,6 +244,47 @@ export default function Admin() {
   const [savingUser, setSavingUser] = useState(false);
   const [userModalError, setUserModalError] = useState('');
   const [showUserPassword, setShowUserPassword] = useState(false);
+
+  // Visitor Telemetry Logs State
+  const [visitorLogs, setVisitorLogs] = useState<VisitorLog[]>([]);
+  const [visitorStats, setVisitorStats] = useState<{
+    total_visits: number;
+    unique_ips: number;
+    today_visits: number;
+    last_24h_visits: number;
+  } | null>(null);
+  const [visitorPage, setVisitorPage] = useState<number>(1);
+  const [visitorPerPage, setVisitorPerPage] = useState<number>(10);
+  const [visitorTotalItems, setVisitorTotalItems] = useState<number>(0);
+  const [visitorTotalPages, setVisitorTotalPages] = useState<number>(1);
+  const [visitorSearch, setVisitorSearch] = useState<string>('');
+  const [selectedTelemetryLog, setSelectedTelemetryLog] = useState<VisitorLog | null>(null);
+  const [loadingVisitors, setLoadingVisitors] = useState<boolean>(false);
+
+  const fetchVisitorLogs = async (p = visitorPage, pp = visitorPerPage, s = visitorSearch) => {
+    setLoadingVisitors(true);
+    try {
+      const res = await getAdminVisitorLogs({ page: p, per_page: pp, search: s });
+      setVisitorLogs(res.data || []);
+      if (res.meta) {
+        setVisitorTotalItems(res.meta.total || 0);
+        setVisitorTotalPages(res.meta.last_page || 1);
+      }
+      if (res.stats) {
+        setVisitorStats(res.stats);
+      }
+    } catch (err) {
+      console.error('Failed to load visitor logs:', err);
+    } finally {
+      setLoadingVisitors(false);
+    }
+  };
+
+  useEffect(() => {
+    if (activeTab === 'visitors') {
+      fetchVisitorLogs(visitorPage, visitorPerPage, visitorSearch);
+    }
+  }, [activeTab, visitorPage, visitorPerPage, visitorSearch]);
 
   useEffect(() => {
     if (!authLoading) {
@@ -882,6 +927,7 @@ export default function Admin() {
     { id: 'leads', label: 'Customer Leads', icon: FileText, badge: enquiries.length, path: '/admin/leads' },
     { id: 'visits', label: 'Visit Appointments', icon: CalendarCheck, badge: appointmentsList.length, path: '/admin/visits' },
     { id: 'users', label: 'Users & Roles', icon: Users, badge: usersList.length, path: '/admin/users' },
+    { id: 'visitors', label: 'Visitor Telemetry Logs', icon: Activity, badge: visitorStats?.total_visits ?? null, path: '/admin/visitors' },
     { id: 'settings', label: 'Site & Contact Info', icon: Settings, badge: null, path: '/admin/settings' },
   ];
 
@@ -2285,6 +2331,180 @@ export default function Admin() {
               </form>
             </div>
           )}
+
+          {/* VISITOR TELEMETRY LOGS TAB */}
+          {activeTab === 'visitors' && (
+            <div className="space-y-6">
+              {/* Visitor Stats Metric Cards */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                <div className="bg-slate-900 border border-slate-800 rounded-3xl p-5 shadow-xl relative overflow-hidden">
+                  <div className="flex items-center justify-between">
+                    <div className="space-y-1">
+                      <p className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Total Recorded Hits</p>
+                      <h3 className="text-2xl font-black text-white">{visitorStats?.total_visits || 0}</h3>
+                    </div>
+                    <div className="w-12 h-12 rounded-2xl bg-blue-500/10 border border-blue-500/30 text-blue-400 flex items-center justify-center shrink-0">
+                      <Activity className="w-6 h-6 stroke-[2.5]" />
+                    </div>
+                  </div>
+                </div>
+
+                <div className="bg-slate-900 border border-slate-800 rounded-3xl p-5 shadow-xl relative overflow-hidden">
+                  <div className="flex items-center justify-between">
+                    <div className="space-y-1">
+                      <p className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Unique Visitor IPs</p>
+                      <h3 className="text-2xl font-black text-emerald-400">{visitorStats?.unique_ips || 0}</h3>
+                    </div>
+                    <div className="w-12 h-12 rounded-2xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 flex items-center justify-center shrink-0">
+                      <Globe className="w-6 h-6 stroke-[2.5]" />
+                    </div>
+                  </div>
+                </div>
+
+                <div className="bg-slate-900 border border-slate-800 rounded-3xl p-5 shadow-xl relative overflow-hidden">
+                  <div className="flex items-center justify-between">
+                    <div className="space-y-1">
+                      <p className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Today's Visitors</p>
+                      <h3 className="text-2xl font-black text-amber-400">{visitorStats?.today_visits || 0}</h3>
+                    </div>
+                    <div className="w-12 h-12 rounded-2xl bg-amber-400/10 border border-amber-400/30 text-amber-400 flex items-center justify-center shrink-0">
+                      <Clock className="w-6 h-6 stroke-[2.5]" />
+                    </div>
+                  </div>
+                </div>
+
+                <div className="bg-slate-900 border border-slate-800 rounded-3xl p-5 shadow-xl relative overflow-hidden">
+                  <div className="flex items-center justify-between">
+                    <div className="space-y-1">
+                      <p className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Last 24 Hours</p>
+                      <h3 className="text-2xl font-black text-purple-400">{visitorStats?.last_24h_visits || 0}</h3>
+                    </div>
+                    <div className="w-12 h-12 rounded-2xl bg-purple-500/10 border border-purple-500/30 text-purple-400 flex items-center justify-center shrink-0">
+                      <Calendar className="w-6 h-6 stroke-[2.5]" />
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Action & Filter Bar */}
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-slate-900 border border-slate-800 rounded-3xl p-5 shadow-xl">
+                <div className="relative flex-1 max-w-md">
+                  <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+                  <input
+                    type="text"
+                    value={visitorSearch}
+                    onChange={(e) => setVisitorSearch(e.target.value)}
+                    placeholder="Search by IP, City, Country, User, Browser, Page..."
+                    className="w-full pl-10 pr-4 py-2 rounded-2xl bg-slate-950 border border-slate-800 text-white text-xs placeholder:text-slate-500 focus:outline-none focus:border-amber-400 transition-colors"
+                  />
+                </div>
+                <div className="text-xs text-slate-400 font-medium flex items-center gap-2">
+                  <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse"></span>
+                  2-Hour De-duplication Active
+                </div>
+              </div>
+
+              {/* Table List */}
+              <div className="bg-slate-900 border border-slate-800 rounded-3xl p-5 shadow-xl overflow-x-auto">
+                <table className="w-full text-left text-xs border-collapse">
+                  <thead>
+                    <tr className="border-b border-slate-800 text-slate-400 font-bold uppercase tracking-wider">
+                      <th className="p-3">Hit #</th>
+                      <th className="p-3">IP Address & Location</th>
+                      <th className="p-3">Status</th>
+                      <th className="p-3">User / Identity</th>
+                      <th className="p-3">Visited Page</th>
+                      <th className="p-3">Device / Browser</th>
+                      <th className="p-3">Date / Time</th>
+                      <th className="p-3 text-right">Action</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-800/60">
+                    {loadingVisitors ? (
+                      <tr>
+                        <td colSpan={8} className="p-8 text-center text-slate-400">
+                          <Loader2 className="w-6 h-6 animate-spin mx-auto mb-2 text-amber-400" />
+                          Loading visitor telemetry logs...
+                        </td>
+                      </tr>
+                    ) : visitorLogs.length > 0 ? (
+                      visitorLogs.map((log) => {
+                        const isNew = log.visitor_status === 'New Visitor';
+                        return (
+                          <tr key={log.id} className="hover:bg-slate-800/40 transition-colors group">
+                            <td className="p-3 font-mono font-bold text-slate-400">#{log.id}</td>
+                            <td className="p-3 font-mono font-bold text-emerald-400 whitespace-nowrap">
+                              <div>{log.ip_address}</div>
+                              <div className="text-[10px] font-normal text-slate-400">
+                                {log.city || 'Ahmedabad'}, {log.country || 'India'}
+                              </div>
+                            </td>
+                            <td className="p-3 whitespace-nowrap">
+                              <span
+                                className={`px-2 py-0.5 rounded-md text-[10px] font-bold uppercase ${
+                                  isNew
+                                    ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30'
+                                    : 'bg-indigo-500/20 text-indigo-300 border border-indigo-500/30'
+                                }`}
+                              >
+                                {log.visitor_status || 'New Visitor'}
+                              </span>
+                            </td>
+                            <td className="p-3 whitespace-nowrap">
+                              {log.user ? (
+                                <div>
+                                  <span className="font-bold text-white block">{log.user.name}</span>
+                                  <span className="text-[10px] text-slate-400">{log.user.email}</span>
+                                </div>
+                              ) : (
+                                <span className="text-slate-400 italic">Guest Visitor</span>
+                              )}
+                            </td>
+                            <td className="p-3 font-mono text-amber-300 max-w-[150px] truncate" title={log.page_url}>
+                              {log.page_url}
+                            </td>
+                            <td className="p-3 whitespace-nowrap text-slate-300">
+                              <div>{log.device_type || 'Desktop'} • {log.os || 'macOS'}</div>
+                              <div className="text-[10px] text-slate-400">{log.browser || 'Chrome'} {log.browser_version || ''}</div>
+                            </td>
+                            <td className="p-3 font-mono text-slate-300 whitespace-nowrap">
+                              {formatDate(log.created_at)}
+                            </td>
+                            <td className="p-3 text-right whitespace-nowrap">
+                              <button
+                                onClick={() => setSelectedTelemetryLog(log)}
+                                className="px-3 py-1.5 rounded-xl bg-blue-500/10 border border-blue-500/30 text-blue-400 hover:bg-blue-500 hover:text-white font-bold text-[11px] transition-all cursor-pointer flex items-center gap-1 ml-auto"
+                              >
+                                <Activity className="w-3.5 h-3.5" /> Inspect
+                              </button>
+                            </td>
+                          </tr>
+                        );
+                      })
+                    ) : (
+                      <tr>
+                        <td colSpan={8} className="p-8 text-center text-slate-400">
+                          No visitor logs found.
+                        </td>
+                      </tr>
+                    )}
+                  </tbody>
+                </table>
+
+                <Pagination
+                  currentPage={visitorPage}
+                  totalPages={visitorTotalPages}
+                  onPageChange={setVisitorPage}
+                  itemsPerPage={visitorPerPage}
+                  onItemsPerPageChange={(newPerPage) => {
+                    setVisitorPerPage(newPerPage);
+                    setVisitorPage(1);
+                  }}
+                  totalItems={visitorTotalItems}
+                />
+              </div>
+            </div>
+          )}
           </div>
         </main>
       </div>
@@ -3332,6 +3552,12 @@ export default function Admin() {
         loading={bulkDeleting}
         onConfirm={handleExecuteBulkDelete}
         onCancel={() => setBulkDeleteConfirm(null)}
+      />
+
+      {/* VISITOR TELEMETRY INSPECTOR MODAL */}
+      <VisitorTelemetryModal
+        log={selectedTelemetryLog}
+        onClose={() => setSelectedTelemetryLog(null)}
       />
     </div>
   );

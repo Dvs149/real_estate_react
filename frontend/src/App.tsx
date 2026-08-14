@@ -23,6 +23,7 @@ import Admin from './pages/Admin';
 import ProtectedRoute from './components/ProtectedRoute';
 import GuestRoute from './components/GuestRoute';
 import ScrollToTop from './components/ScrollToTop';
+import VisitorTracker from './components/VisitorTracker';
 
 function InactivityBanner() {
   const { inactivityLoggedOut, dismissInactivityNotice } = useAuth();
@@ -68,6 +69,7 @@ export default function App() {
     <AuthProvider>
       <BrowserRouter>
         <ScrollToTop />
+        <VisitorTracker />
         <div className="min-h-screen bg-slate-950 text-slate-100 font-sans antialiased flex flex-col selection:bg-amber-400 selection:text-slate-950">
           <Navbar />
           <main className="flex-grow">

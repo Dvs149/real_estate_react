@@ -1,4 +1,4 @@
-import { Property, Location, PropertyType, Amenity, Agent, Blog, BlogCategory, Testimonial, Faq, Enquiry, Appointment, User, PaginatedResponse } from '../types';
+import { Property, Location, PropertyType, Amenity, Agent, Blog, BlogCategory, Testimonial, Faq, Enquiry, Appointment, User, PaginatedResponse, VisitorLog } from '../types';
 
 const API_BASE = '/api';
 
@@ -365,4 +365,36 @@ export async function updateSettings(data: Partial<SiteSettings>): Promise<{ mes
     window.dispatchEvent(new CustomEvent('siteSettingsUpdated', { detail: res.data }));
   }
   return res;
+}
+
+export async function logVisitor(payload?: string | Record<string, any>): Promise<any> {
+  const bodyData =
+    typeof payload === 'string'
+      ? { page_url: payload }
+      : payload || { page_url: typeof window !== 'undefined' ? window.location.pathname : '/' };
+
+  return fetchApi<any>('/visitor-log', {
+    method: 'POST',
+    body: JSON.stringify(bodyData),
+  });
+}
+
+export async function getAdminVisitorLogs(params: Record<string, any> = {}): Promise<{
+  data: VisitorLog[];
+  meta?: any;
+  stats?: {
+    total_visits: number;
+    unique_ips: number;
+    today_visits: number;
+    last_24h_visits: number;
+  };
+}> {
+  const query = new URLSearchParams();
+  Object.entries(params).forEach(([key, val]) => {
+    if (val !== undefined && val !== null && val !== '') {
+      query.append(key, String(val));
+    }
+  });
+  const url = `/admin/visitor-logs${query.toString() ? `?${query.toString()}` : ''}`;
+  return fetchApi(url);
 }
