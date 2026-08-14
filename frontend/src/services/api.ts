@@ -1,4 +1,4 @@
-import { Property, Location, PropertyType, Amenity, Agent, Blog, Testimonial, Faq, Enquiry, Appointment, User, PaginatedResponse } from '../types';
+import { Property, Location, PropertyType, Amenity, Agent, Blog, BlogCategory, Testimonial, Faq, Enquiry, Appointment, User, PaginatedResponse } from '../types';
 
 const API_BASE = '/api';
 
@@ -184,6 +184,40 @@ export async function getBlogBySlug(slug: string): Promise<{ data: Blog }> {
   return fetchApi<{ data: Blog }>(`/blogs/${slug}`);
 }
 
+export async function getBlogCategories(): Promise<{ data: BlogCategory[] }> {
+  return fetchApi<{ data: BlogCategory[] }>('/blog-categories');
+}
+
+export async function getAdminBlogs(): Promise<{ data: Blog[] }> {
+  return fetchApi<{ data: Blog[] }>('/admin/blogs');
+}
+
+export async function createBlog(data: Partial<Blog>): Promise<{ data: Blog }> {
+  return fetchApi<{ data: Blog }>('/admin/blogs', {
+    method: 'POST',
+    body: JSON.stringify(data),
+  });
+}
+
+export async function updateBlog(id: number, data: Partial<Blog>): Promise<{ data: Blog }> {
+  return fetchApi<{ data: Blog }>(`/admin/blogs/${id}`, {
+    method: 'PUT',
+    body: JSON.stringify(data),
+  });
+}
+
+export async function deleteBlog(id: number): Promise<{ message: string }> {
+  return fetchApi<{ message: string }>(`/admin/blogs/${id}`, {
+    method: 'DELETE',
+  });
+}
+
+export async function toggleBlogPublish(id: number): Promise<{ message: string; is_published: boolean }> {
+  return fetchApi<{ message: string; is_published: boolean }>(`/admin/blogs/${id}/publish`, {
+    method: 'POST',
+  });
+}
+
 export async function getTestimonials(): Promise<{ data: Testimonial[] }> {
   return fetchApi<{ data: Testimonial[] }>('/testimonials');
 }
@@ -290,4 +324,3 @@ export async function updateSettings(data: Partial<SiteSettings>): Promise<{ mes
   }
   return res;
 }
-

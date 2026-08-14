@@ -46,6 +46,7 @@ Route::get('/agents/{slug}', [AgentController::class, 'show']);
 Route::get('/settings', [SettingController::class, 'index']);
 Route::get('/blogs', [BlogController::class, 'index']);
 Route::get('/blogs/{slug}', [BlogController::class, 'show']);
+Route::get('/blog-categories', [BlogController::class, 'categories']);
 Route::get('/testimonials', [TestimonialController::class, 'index']);
 Route::get('/faqs', [FaqController::class, 'index']);
 
@@ -86,5 +87,13 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::patch('/users/{id}/role', [AdminController::class, 'updateUserRole']);
         Route::delete('/users/{id}', [AdminController::class, 'deleteUser']);
         Route::post('/settings', [SettingController::class, 'update']);
+
+        // Blog Management Routes
+        Route::get('/blogs', [BlogController::class, 'adminIndex']);
+        Route::post('/blogs', [BlogController::class, 'store']);
+        Route::put('/blogs/{id}', [BlogController::class, 'update']);
+        Route::delete('/blogs/{id}', [BlogController::class, 'destroy']);
+        Route::post('/blogs/{id}/publish', [BlogController::class, 'togglePublish']);
     });
 });
+

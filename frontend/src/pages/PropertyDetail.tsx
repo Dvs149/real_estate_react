@@ -152,7 +152,7 @@ export default function PropertyDetail() {
             <div className="space-y-1">
               <Maximize2 className="w-6 h-6 text-amber-400 mx-auto" />
               <span className="text-xs text-slate-400 block">Built Area</span>
-              <span className="text-lg font-bold text-white">{property.area_sqft} sqft</span>
+              <span className="text-lg font-bold text-white">{property.area_sqft ? Number(property.area_sqft).toLocaleString() : '—'} sq ft</span>
             </div>
             <div className="space-y-1">
               <Calendar className="w-6 h-6 text-amber-400 mx-auto" />

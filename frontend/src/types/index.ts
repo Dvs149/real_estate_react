@@ -131,6 +131,12 @@ export interface Appointment {
   agent?: Agent;
 }
 
+export interface BlogCategory {
+  id: number;
+  name: string;
+  slug: string;
+}
+
 export interface Blog {
   id: number;
   title: string;
@@ -139,12 +145,11 @@ export interface Blog {
   content: string;
   image?: string;
   author_name: string;
+  is_published?: boolean;
   published_at?: string;
-  category?: {
-    id: number;
-    name: string;
-    slug: string;
-  };
+  blog_category_id?: number;
+  category?: BlogCategory;
+  created_at?: string;
 }
 
 export interface Testimonial {
