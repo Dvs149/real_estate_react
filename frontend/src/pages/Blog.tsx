@@ -22,16 +22,26 @@ export default function Blog() {
   }, []);
 
   const filteredBlogs = blogs.filter((b) => {
-    if (selectedCat && b.blog_category_id !== Number(selectedCat) && b.category?.slug !== selectedCat) {
-      return false;
+    if (selectedCat) {
+      const target = String(selectedCat).trim().toLowerCase();
+      const bCatId = b.blog_category_id ?? (b as any).category_id ?? b.category?.id;
+      const matchesId = bCatId !== undefined && bCatId !== null && String(bCatId) === target;
+      const matchesSlug = b.category?.slug?.toLowerCase() === target;
+      const matchesName = b.category?.name?.toLowerCase() === target;
+
+      if (!matchesId && !matchesSlug && !matchesName) {
+        return false;
+      }
     }
+
     if (search.trim()) {
       const q = search.toLowerCase();
-      return (
-        b.title.toLowerCase().includes(q) ||
-        b.excerpt.toLowerCase().includes(q) ||
-        (b.category?.name && b.category.name.toLowerCase().includes(q))
-      );
+      const matchesTitle = b.title.toLowerCase().includes(q);
+      const matchesExcerpt = b.excerpt?.toLowerCase().includes(q);
+      const matchesCatName = b.category?.name?.toLowerCase().includes(q);
+      if (!matchesTitle && !matchesExcerpt && !matchesCatName) {
+        return false;
+      }
     }
     return true;
   });
@@ -89,12 +99,15 @@ export default function Blog() {
             All Articles
           </button>
           {categories.map((c) => {
-            const isActive = selectedCat === String(c.id) || selectedCat === c.slug;
+            const isActive =
+              selectedCat === String(c.id) ||
+              selectedCat === c.slug ||
+              selectedCat.toLowerCase() === c.name.toLowerCase();
             return (
               <button
                 key={c.id}
                 type="button"
-                onClick={() => handleCatChange(String(c.id))}
+                onClick={() => handleCatChange(c.slug || String(c.id))}
                 className={`px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
                   isActive
                     ? 'bg-amber-400 text-slate-950 shadow-md shadow-amber-400/20'
