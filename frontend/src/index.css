@@ -11,6 +11,34 @@
   }
 }
 
+@keyframes contentFadeIn {
+  0% {
+    opacity: 0;
+    transform: translateY(14px) scale(0.99);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes pillGlow {
+  0%, 100% {
+    box-shadow: 0 8px 25px -4px rgba(16, 185, 129, 0.35);
+  }
+  50% {
+    box-shadow: 0 12px 35px -2px rgba(16, 185, 129, 0.55);
+  }
+}
+
+.animate-tab-content {
+  animation: contentFadeIn 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.animate-pill-glow {
+  animation: pillGlow 2.5s infinite ease-in-out;
+}
+
 body {
   font-family: 'Plus Jakarta Sans', sans-serif;
   background-color: #020617;

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate, useParams, useSearchParams, Link } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
 import {
@@ -77,7 +77,7 @@ export default function Admin() {
   const [searchParams] = useSearchParams();
   const { user, loading: authLoading } = useAuth();
 
-  const getActiveTab = (): 'overview' | 'properties' | 'locations' | 'blogs' | 'leads' | 'visits' | 'users' | 'settings' => {
+  const [activeTab, setActiveTab] = useState<'overview' | 'properties' | 'locations' | 'blogs' | 'leads' | 'visits' | 'users' | 'settings'>(() => {
     if (pathTab && ['overview', 'properties', 'locations', 'blogs', 'leads', 'visits', 'users', 'settings'].includes(pathTab)) {
       return pathTab as any;
     }
@@ -86,9 +86,20 @@ export default function Admin() {
       return queryTab as any;
     }
     return 'overview';
-  };
+  });
 
-  const activeTab = getActiveTab();
+  const dataLoadedRef = useRef<boolean>(false);
+
+  useEffect(() => {
+    if (pathTab && ['overview', 'properties', 'locations', 'blogs', 'leads', 'visits', 'users', 'settings'].includes(pathTab)) {
+      setActiveTab(pathTab as any);
+    }
+  }, [pathTab]);
+
+  const handleTabClick = (tabId: string, path: string) => {
+    setActiveTab(tabId as any);
+    navigate(path, { replace: true });
+  };
 
   const [stats, setStats] = useState<any>(null);
   const [properties, setProperties] = useState<Property[]>([]);
@@ -230,7 +241,10 @@ export default function Admin() {
         navigate('/login');
         return;
       }
-      loadAdminData();
+      if (!dataLoadedRef.current) {
+        dataLoadedRef.current = true;
+        loadAdminData();
+      }
     }
   }, [user, authLoading, navigate]);
 
@@ -882,34 +896,57 @@ export default function Admin() {
           </div>
 
           {/* Navigation Links List */}
-          <nav className="space-y-1.5">
+          <nav className="relative space-y-2">
+            {/* Floating Sliding Active Pill Background */}
+            {(() => {
+              const activeIndex = navMenuItems.findIndex((item) => item.id === activeTab);
+              if (activeIndex === -1) return null;
+              return (
+                <div
+                  className="absolute left-0 right-0 h-11 rounded-2xl bg-[#00d084] shadow-lg shadow-[#00d084]/25 transition-all duration-400 ease-[cubic-bezier(0.34,1.56,0.64,1)] pointer-events-none z-0"
+                  style={{
+                    transform: `translateY(${activeIndex * 52}px)`,
+                  }}
+                />
+              );
+            })()}
+
             {navMenuItems.map((item) => {
               const Icon = item.icon;
               const active = activeTab === item.id;
               return (
-                <Link
+                <button
+                  type="button"
                   key={item.id}
-                  to={item.path}
-                  className={`w-full flex items-center justify-between px-4 py-3 rounded-2xl text-xs font-bold transition-all duration-200 cursor-pointer ${
+                  onClick={() => handleTabClick(item.id, item.path)}
+                  className={`w-full h-11 flex items-center justify-between px-4 rounded-2xl text-xs font-bold transition-all duration-300 ease-out cursor-pointer relative z-10 group ${
                     active
-                      ? 'bg-gradient-to-r from-emerald-500 to-emerald-400 text-slate-950 shadow-lg shadow-emerald-500/20 translate-x-1'
-                      : 'text-slate-300 hover:bg-slate-800/80 hover:text-white'
+                      ? 'text-slate-950 font-bold'
+                      : 'text-slate-200 hover:bg-slate-800/50 hover:text-white'
                   }`}
                 >
-                  <div className="flex items-center gap-2.5">
-                    <Icon className={`w-4 h-4 ${active ? 'text-slate-950' : 'text-emerald-400'}`} />
+                  <div className="flex items-center gap-3">
+                    <Icon
+                      className={`w-4 h-4 transition-transform duration-300 ${
+                        active
+                          ? 'text-slate-950'
+                          : 'text-[#00d084] group-hover:scale-110'
+                      }`}
+                    />
                     <span>{item.label}</span>
                   </div>
                   {item.badge !== null && (
                     <span
-                      className={`px-2 py-0.5 rounded-full text-[10px] font-mono font-bold ${
-                        active ? 'bg-slate-950 text-emerald-400' : 'bg-slate-800 text-slate-400'
+                      className={`px-2 py-0.5 rounded-full text-[10px] font-mono font-bold transition-colors duration-300 ${
+                        active
+                          ? 'bg-slate-950 text-[#00d084] shadow-sm'
+                          : 'bg-slate-800/80 text-slate-400 group-hover:text-slate-200'
                       }`}
                     >
                       {item.badge}
                     </span>
                   )}
-                </Link>
+                </button>
               );
             })}
           </nav>
@@ -931,6 +968,7 @@ export default function Admin() {
 
         {/* Right Main Content Area */}
         <main className="lg:col-span-9 space-y-8">
+          <div key={activeTab} className="animate-tab-content space-y-8">
           {/* OVERVIEW TAB */}
           {activeTab === 'overview' && (
             <div className="space-y-8">
@@ -2205,6 +2243,7 @@ export default function Admin() {
               </form>
             </div>
           )}
+          </div>
         </main>
       </div>
 
