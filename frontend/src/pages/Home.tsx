@@ -28,7 +28,7 @@ export default function Home() {
         setFeaturedProperties(propsRes.data || []);
         setLocations(locsRes.data || []);
         setPropertyTypes(typesRes.data || []);
-        setAgents(agentsRes.data || []);
+        setAgents((agentsRes.data || []).slice(0, 3));
         setBlogs((blogsRes.data || []).slice(0, 3));
         setTestimonials(testRes.data || []);
       })
@@ -248,6 +248,16 @@ export default function Home() {
               </div>
             </Link>
           ))}
+        </div>
+
+        <div className="mt-8 text-center">
+          <Link
+            to="/agents"
+            className="inline-flex items-center gap-2 px-6 py-3.5 rounded-2xl bg-slate-900 border border-slate-800 hover:border-amber-400/50 text-white font-bold text-xs hover:text-amber-400 transition-all shadow-xl hover:scale-105"
+          >
+            <span>Explore All Senior Luxury Agents & Advisors</span>
+            <ArrowRight className="w-4 h-4 text-amber-400" />
+          </Link>
         </div>
       </section>
 
