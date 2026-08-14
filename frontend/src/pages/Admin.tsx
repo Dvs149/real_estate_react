@@ -53,6 +53,7 @@ import {
   Settings,
   CheckCircle2,
   Newspaper,
+  Video,
 } from 'lucide-react';
 
 export default function Admin() {
@@ -114,6 +115,7 @@ export default function Admin() {
     furnished_status: 'furnished' as 'furnished' | 'semi-furnished' | 'unfurnished',
     property_status: 'available' as 'available' | 'sold' | 'rented',
     address: '',
+    video_url: '',
     image_urls: [''],
     is_featured: false,
     is_published: true,
@@ -246,6 +248,7 @@ export default function Admin() {
       furnished_status: 'furnished',
       property_status: 'available',
       address: 'Sindhu Bhavan Road, Bodakdev, Ahmedabad',
+      video_url: 'https://www.youtube.com/embed/dQw4w9WgXcQ',
       image_urls: [
         'https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?auto=format&fit=crop&q=80&w=1200',
         'https://images.unsplash.com/photo-1600607687939-ce8a6c25118c?auto=format&fit=crop&q=80&w=1200',
@@ -278,6 +281,7 @@ export default function Admin() {
       furnished_status: prop.furnished_status || 'furnished',
       property_status: prop.property_status || 'available',
       address: prop.address || '',
+      video_url: prop.video_url || '',
       image_urls: existingImgs.length > 0 ? existingImgs : [''],
       is_featured: !!prop.is_featured,
       is_published: prop.is_published !== false,
@@ -306,6 +310,7 @@ export default function Admin() {
         furnished_status: propertyForm.furnished_status,
         property_status: propertyForm.property_status,
         address: propertyForm.address,
+        video_url: propertyForm.video_url || null,
         images: validImages.length > 0 ? validImages : ['https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?auto=format&fit=crop&q=80&w=1200'],
         primary_image: validImages[0] || 'https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?auto=format&fit=crop&q=80&w=1200',
         is_featured: propertyForm.is_featured,
@@ -1441,6 +1446,20 @@ export default function Admin() {
                   placeholder="Sindhu Bhavan Road, Bodakdev, Ahmedabad, Gujarat 380054"
                   value={propertyForm.address}
                   onChange={(e) => setPropertyForm({ ...propertyForm, address: e.target.value })}
+                  className="w-full px-3.5 py-2.5 rounded-xl bg-slate-950 border border-slate-800 text-white text-xs placeholder:text-slate-600 focus:outline-none focus:border-amber-400"
+                />
+              </div>
+
+              <div className="space-y-1">
+                <label className="text-xs font-semibold text-slate-300 flex items-center gap-1.5">
+                  <Video className="w-3.5 h-3.5 text-amber-400" />
+                  Video Walkthrough Tour Embed URL (Optional)
+                </label>
+                <input
+                  type="text"
+                  placeholder="https://www.youtube.com/embed/dQw4w9WgXcQ or Vimeo embed URL"
+                  value={propertyForm.video_url}
+                  onChange={(e) => setPropertyForm({ ...propertyForm, video_url: e.target.value })}
                   className="w-full px-3.5 py-2.5 rounded-xl bg-slate-950 border border-slate-800 text-white text-xs placeholder:text-slate-600 focus:outline-none focus:border-amber-400"
                 />
               </div>

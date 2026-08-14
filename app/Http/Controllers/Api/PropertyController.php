@@ -203,6 +203,7 @@ class PropertyController extends Controller
             'is_featured' => ['sometimes', 'boolean'],
             'is_published' => ['sometimes', 'boolean'],
             'address' => ['sometimes', 'string'],
+            'video_url' => ['nullable', 'string'],
             'primary_image' => ['nullable', 'string'],
             'images' => ['nullable', 'array'],
         ]);
