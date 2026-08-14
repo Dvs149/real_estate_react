@@ -127,6 +127,101 @@ class DatabaseSeeder extends Seeder
             ],
         ]);
 
+        // Generate 147 additional agents to reach 150 agents total
+        $allAgentsList = [$agent1->id, $agent2->id, $agent3->id];
+
+        $firstNames = [
+            'Rajesh', 'Ananya', 'Vikramaditya', 'Priya', 'Rohan', 'Kavita', 'Aditya', 'Sneha',
+            'Arjun', 'Meera', 'Karan', 'Pooja', 'Siddharth', 'Divya', 'Amit', 'Neha',
+            'Rahul', 'Tanvi', 'Manish', 'Ritu', 'Dev', 'Isha', 'Aarav', 'Nisha',
+            'Gaurav', 'Payal', 'Harsh', 'Swati', 'Varun', 'Shweta', 'Yash', 'Anjali',
+            'Tarun', 'Simran', 'Nikhil', 'Shalini', 'Kunal', 'Deepika', 'Akash', 'Kriti'
+        ];
+
+        $lastNames = [
+            'Verma', 'Sharma', 'Singh', 'Patel', 'Joshi', 'Mehta', 'Gupta', 'Shah',
+            'Deshmukh', 'Reddy', 'Chowdhury', 'Kapoor', 'Malhotra', 'Nair', 'Bhatia', 'Agarwal',
+            'Rao', 'Iyer', 'Saxena', 'Trivedi', 'Kulkarni', 'Mukherjee', 'Sengupta', 'Venkatesh'
+        ];
+
+        $agencyPrefixes = [
+            'DVS Premier', 'Horizon Luxury', 'Imperial', 'Prestige', 'Apex', 'Crown',
+            'Supreme', 'Sovereign', 'Vanguard', 'Pinnacle', 'Heritage', 'Aura',
+            'Quantum', 'Regal', 'Signature', 'Velvet', 'Golden Gate', 'Skyline'
+        ];
+
+        $agencySuffixes = [
+            'Estates', 'Realty Group', 'Living', 'Properties', 'Advisors', 'Homes',
+            'Realty Corp', 'Private Office', 'Real Estate', 'Capital Advisors'
+        ];
+
+        $avatarsPool = [
+            'https://images.unsplash.com/photo-1560250097-0b93528c311a?auto=format&fit=crop&q=80&w=400',
+            'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?auto=format&fit=crop&q=80&w=400',
+            'https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?auto=format&fit=crop&q=80&w=400',
+            'https://images.unsplash.com/photo-1580489944761-15a19d654956?auto=format&fit=crop&q=80&w=400',
+            'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&q=80&w=400',
+            'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=400',
+            'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&q=80&w=400',
+            'https://images.unsplash.com/photo-1573497019940-1c28c88b4f3e?auto=format&fit=crop&q=80&w=400',
+            'https://images.unsplash.com/photo-1566492031773-4f4e44671857?auto=format&fit=crop&q=80&w=400',
+            'https://images.unsplash.com/photo-1573496358961-3c82861ab8f4?auto=format&fit=crop&q=80&w=400',
+            'https://images.unsplash.com/photo-1492562080023-ab3db95bfbce?auto=format&fit=crop&q=80&w=400',
+            'https://images.unsplash.com/photo-1524504388940-b1c1722653e1?auto=format&fit=crop&q=80&w=400',
+            'https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?auto=format&fit=crop&q=80&w=400',
+            'https://images.unsplash.com/photo-1517841905240-472988babdf9?auto=format&fit=crop&q=80&w=400',
+            'https://images.unsplash.com/photo-1522075469751-3a6694fb2f61?auto=format&fit=crop&q=80&w=400',
+        ];
+
+        $biosPool = [
+            'Specialized in ultra-luxury high-rises, waterfront penthouses, and bespoke client portfolio advisory.',
+            'Passionate about modern architectural design, sustainable smart homes, and high-end residential listings.',
+            'Veteran advisor specializing in commercial headquarters, private estates, and high-yielding investment assets.',
+            'Dedicated luxury real estate consultant with extensive market intelligence in prime metropolitan corridors.',
+            'Expert in high-value property acquisitions, NRI portfolio management, and exclusive off-market deals.',
+            'Senior real estate specialist focused on luxury sea-view apartments, eco villas, and private gated communities.',
+        ];
+
+        for ($a = 4; $a <= 150; $a++) {
+            $fname = $firstNames[array_rand($firstNames)];
+            $lname = $lastNames[array_rand($lastNames)];
+            $fullName = "{$fname} {$lname}";
+            $slug = Str::slug("{$fullName}-{$a}");
+            $email = "agent{$a}@realestate.com";
+            $avatar = $avatarsPool[($a - 1) % count($avatarsPool)];
+            $agency = $agencyPrefixes[array_rand($agencyPrefixes)] . ' ' . $agencySuffixes[array_rand($agencySuffixes)];
+
+            $agentUser = User::create([
+                'name' => $fullName,
+                'email' => $email,
+                'password' => Hash::make('password'),
+                'role' => 'agent',
+                'phone' => '+91 ' . rand(90000, 99999) . ' ' . rand(10000, 99999),
+                'avatar' => $avatar,
+                'status' => 'active',
+            ]);
+
+            $newAgent = Agent::create([
+                'user_id' => $agentUser->id,
+                'name' => $fullName,
+                'slug' => $slug,
+                'email' => $email,
+                'phone' => $agentUser->phone,
+                'agency_name' => $agency,
+                'experience_years' => rand(3, 22),
+                'rating' => round(4.5 + (rand(0, 50) / 100), 2),
+                'avatar' => $avatar,
+                'bio' => $biosPool[array_rand($biosPool)],
+                'social_links' => [
+                    'linkedin' => 'https://linkedin.com',
+                    'twitter' => 'https://twitter.com',
+                    'instagram' => 'https://instagram.com',
+                ],
+            ]);
+
+            $allAgentsList[] = $newAgent->id;
+        }
+
         // 3. Seed Property Types
         $typeApartment = PropertyType::create([
             'name' => 'Apartment & Flat',
@@ -516,7 +611,6 @@ class DatabaseSeeder extends Seeder
         // Generate additional 142 realistic properties to reach 150 properties total
         $allLocations = Location::all();
         $allTypes = PropertyType::all();
-        $allAgentsList = [$agent1->id, $agent2->id, $agent3->id];
         $allAmenitiesList = $allAmenities;
 
         $prefixes = [
