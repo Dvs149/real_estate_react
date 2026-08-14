@@ -19,6 +19,10 @@ import {
   deleteLocation,
   getSettings,
   updateSettings,
+  createProperty,
+  updateProperty,
+  getPropertyTypes,
+  getAgents,
   getAdminBlogs,
   getBlogCategories,
   createBlog,
@@ -27,7 +31,7 @@ import {
   toggleBlogPublish,
   SiteSettings,
 } from '../services/api';
-import { Property, User, Enquiry, Appointment, Location, Blog, BlogCategory } from '../types';
+import { Property, PropertyType, Agent, User, Enquiry, Appointment, Location, Blog, BlogCategory } from '../types';
 import CustomSelect, { SelectOption } from '../components/CustomSelect';
 import {
   Shield,
@@ -78,6 +82,8 @@ export default function Admin() {
   const [appointments, setAppointments] = useState<Appointment[]>([]);
   const [blogsList, setBlogsList] = useState<Blog[]>([]);
   const [categoriesList, setCategoriesList] = useState<BlogCategory[]>([]);
+  const [propertyTypesList, setPropertyTypesList] = useState<PropertyType[]>([]);
+  const [agentsList, setAgentsList] = useState<Agent[]>([]);
 
   // Site Settings State
   const [siteSettings, setSiteSettings] = useState<SiteSettings>({
@@ -90,6 +96,30 @@ export default function Admin() {
   const [settingsSuccess, setSettingsSuccess] = useState<string>('');
 
   const [loading, setLoading] = useState<boolean>(true);
+
+  // Property Modal State
+  const [showPropertyModal, setShowPropertyModal] = useState(false);
+  const [editingProperty, setEditingProperty] = useState<Property | null>(null);
+  const [propertyForm, setPropertyForm] = useState({
+    title: '',
+    description: '',
+    property_type_id: '',
+    location_id: '',
+    agent_id: '',
+    price: '',
+    purpose: 'buy' as 'buy' | 'rent',
+    bedrooms: '3',
+    bathrooms: '2',
+    area_sqft: '1500',
+    furnished_status: 'furnished' as 'furnished' | 'semi-furnished' | 'unfurnished',
+    property_status: 'available' as 'available' | 'sold' | 'rented',
+    address: '',
+    image_urls: [''],
+    is_featured: false,
+    is_published: true,
+  });
+  const [savingProperty, setSavingProperty] = useState(false);
+  const [propertyModalError, setPropertyModalError] = useState('');
 
   // Location Modal State
   const [showLocationModal, setShowLocationModal] = useState(false);
@@ -146,7 +176,7 @@ export default function Admin() {
   const loadAdminData = async () => {
     setLoading(true);
     try {
-      const [statsRes, propsRes, locationsRes, usersRes, settingsRes, blogsRes, categoriesRes] = await Promise.all([
+      const [statsRes, propsRes, locationsRes, usersRes, settingsRes, blogsRes, categoriesRes, typesRes, agentsRes] = await Promise.all([
         getAdminStats().catch(() => ({ stats: {}, recent_enquiries: [], recent_appointments: [] })),
         getProperties({ per_page: 50 }).catch(() => ({ data: [] })),
         getLocations().catch(() => ({ data: [] })),
@@ -154,6 +184,8 @@ export default function Admin() {
         getSettings().catch(() => null),
         getAdminBlogs().catch(() => ({ data: [] })),
         getBlogCategories().catch(() => ({ data: [] })),
+        getPropertyTypes().catch(() => ({ data: [] })),
+        getAgents().catch(() => ({ data: [] })),
       ]);
 
       setStats(statsRes.stats);
@@ -164,11 +196,136 @@ export default function Admin() {
       setUsersList(usersRes.data || []);
       setBlogsList(blogsRes.data || []);
       setCategoriesList(categoriesRes.data || []);
+      setPropertyTypesList(typesRes.data || []);
+      setAgentsList(agentsRes.data || []);
       if (settingsRes) setSiteSettings(settingsRes);
     } catch (err) {
       console.error('Error loading admin dataset:', err);
     } finally {
       setLoading(false);
+    }
+  };
+
+  // Property Image Array Handlers
+  const handleAddImageUrlInput = () => {
+    setPropertyForm((prev) => ({
+      ...prev,
+      image_urls: [...prev.image_urls, ''],
+    }));
+  };
+
+  const handleRemoveImageUrlInput = (index: number) => {
+    setPropertyForm((prev) => ({
+      ...prev,
+      image_urls: prev.image_urls.filter((_, i) => i !== index),
+    }));
+  };
+
+  const handleImageUrlChange = (index: number, val: string) => {
+    setPropertyForm((prev) => {
+      const updated = [...prev.image_urls];
+      updated[index] = val;
+      return { ...prev, image_urls: updated };
+    });
+  };
+
+  // Property Handlers
+  const handleOpenAddProperty = () => {
+    setEditingProperty(null);
+    setPropertyForm({
+      title: '',
+      description: '',
+      property_type_id: propertyTypesList[0] ? String(propertyTypesList[0].id) : '1',
+      location_id: locationsList[0] ? String(locationsList[0].id) : '1',
+      agent_id: agentsList[0] ? String(agentsList[0].id) : '1',
+      price: '15000000',
+      purpose: 'buy',
+      bedrooms: '3',
+      bathrooms: '2',
+      area_sqft: '1800',
+      furnished_status: 'furnished',
+      property_status: 'available',
+      address: 'Sindhu Bhavan Road, Bodakdev, Ahmedabad',
+      image_urls: [
+        'https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?auto=format&fit=crop&q=80&w=1200',
+        'https://images.unsplash.com/photo-1600607687939-ce8a6c25118c?auto=format&fit=crop&q=80&w=1200',
+        'https://images.unsplash.com/photo-1600566753376-12c8ab7fb75b?auto=format&fit=crop&q=80&w=1200',
+      ],
+      is_featured: false,
+      is_published: true,
+    });
+    setPropertyModalError('');
+    setShowPropertyModal(true);
+  };
+
+  const handleOpenEditProperty = (prop: Property) => {
+    setEditingProperty(prop);
+    const existingImgs = prop.images && prop.images.length > 0
+      ? prop.images.map((i) => i.image_path)
+      : (prop.primary_image ? [prop.primary_image] : ['']);
+
+    setPropertyForm({
+      title: prop.title,
+      description: prop.description || '',
+      property_type_id: prop.property_type ? String(prop.property_type.id) : propertyTypesList[0] ? String(propertyTypesList[0].id) : '1',
+      location_id: prop.location ? String(prop.location.id) : locationsList[0] ? String(locationsList[0].id) : '1',
+      agent_id: prop.agent ? String(prop.agent.id) : agentsList[0] ? String(agentsList[0].id) : '1',
+      price: String(prop.price),
+      purpose: prop.purpose || 'buy',
+      bedrooms: String(prop.bedrooms || 3),
+      bathrooms: String(prop.bathrooms || 2),
+      area_sqft: String(prop.area_sqft || 1500),
+      furnished_status: prop.furnished_status || 'furnished',
+      property_status: prop.property_status || 'available',
+      address: prop.address || '',
+      image_urls: existingImgs.length > 0 ? existingImgs : [''],
+      is_featured: !!prop.is_featured,
+      is_published: prop.is_published !== false,
+    });
+    setPropertyModalError('');
+    setShowPropertyModal(true);
+  };
+
+  const handleSaveProperty = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setSavingProperty(true);
+    setPropertyModalError('');
+    try {
+      const validImages = propertyForm.image_urls.map((url) => url.trim()).filter(Boolean);
+      const payload: any = {
+        title: propertyForm.title,
+        description: propertyForm.description,
+        property_type_id: Number(propertyForm.property_type_id),
+        location_id: Number(propertyForm.location_id),
+        agent_id: Number(propertyForm.agent_id),
+        price: Number(propertyForm.price),
+        purpose: propertyForm.purpose,
+        bedrooms: Number(propertyForm.bedrooms),
+        bathrooms: Number(propertyForm.bathrooms),
+        area_sqft: Number(propertyForm.area_sqft),
+        furnished_status: propertyForm.furnished_status,
+        property_status: propertyForm.property_status,
+        address: propertyForm.address,
+        images: validImages.length > 0 ? validImages : ['https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?auto=format&fit=crop&q=80&w=1200'],
+        primary_image: validImages[0] || 'https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?auto=format&fit=crop&q=80&w=1200',
+        is_featured: propertyForm.is_featured,
+        is_published: propertyForm.is_published,
+      };
+
+      if (editingProperty) {
+        const res = await updateProperty(editingProperty.id, payload);
+        setProperties((prev) =>
+          prev.map((p) => (p.id === editingProperty.id ? { ...p, ...res.data } : p))
+        );
+      } else {
+        const res = await createProperty(payload);
+        setProperties((prev) => [res.data, ...prev]);
+      }
+      setShowPropertyModal(false);
+    } catch (err: any) {
+      setPropertyModalError(err.message || 'Failed to save property listing');
+    } finally {
+      setSavingProperty(false);
     }
   };
 
@@ -629,14 +786,21 @@ export default function Admin() {
           {/* PROPERTIES TAB */}
           {activeTab === 'properties' && (
             <div className="bg-slate-900 border border-slate-800 rounded-3xl p-6 space-y-4 shadow-xl overflow-x-auto">
-              <div className="flex items-center justify-between mb-4">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-800 pb-4 mb-4">
                 <div>
                   <h2 className="text-xl font-bold text-white flex items-center gap-2">
                     <Building2 className="w-5 h-5 text-emerald-400" />
                     Manage Listings Catalog
                   </h2>
-                  <p className="text-xs text-slate-400">Review status, toggle publishing, promote featured listings, or remove properties.</p>
+                  <p className="text-xs text-slate-400">Add, edit, review status, toggle publishing, promote featured listings, or remove properties.</p>
                 </div>
+                <button
+                  onClick={handleOpenAddProperty}
+                  className="px-4 py-2 rounded-xl bg-amber-400 hover:bg-amber-300 text-slate-950 font-bold text-xs flex items-center gap-2 shadow-lg shadow-amber-400/20 cursor-pointer shrink-0"
+                >
+                  <Plus className="w-4 h-4" />
+                  Add New Listing
+                </button>
               </div>
               <table className="w-full text-left text-xs text-slate-300">
                 <thead className="bg-slate-950 text-slate-400 uppercase text-[10px] font-bold tracking-wider">
@@ -677,21 +841,30 @@ export default function Admin() {
                           {prop.is_featured ? 'FEATURED' : 'NO'}
                         </button>
                       </td>
-                      <td className="p-3 text-right space-x-2">
-                        <button
-                          onClick={() => window.open(`/properties/${prop.slug}`, '_blank')}
-                          className="p-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white cursor-pointer"
-                          title="View"
-                        >
-                          <Eye className="w-3.5 h-3.5" />
-                        </button>
-                        <button
-                          onClick={() => handleDeleteProperty(prop.id)}
-                          className="p-1.5 rounded-lg bg-rose-500/20 hover:bg-rose-500/30 text-rose-400 cursor-pointer"
-                          title="Delete"
-                        >
-                          <Trash2 className="w-3.5 h-3.5" />
-                        </button>
+                      <td className="p-3 text-right whitespace-nowrap">
+                        <div className="flex items-center justify-end gap-1.5">
+                          <button
+                            onClick={() => window.open(`/properties/${prop.slug}`, '_blank')}
+                            className="p-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white cursor-pointer"
+                            title="View"
+                          >
+                            <Eye className="w-3.5 h-3.5" />
+                          </button>
+                          <button
+                            onClick={() => handleOpenEditProperty(prop)}
+                            className="p-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white cursor-pointer"
+                            title="Edit Listing"
+                          >
+                            <Edit2 className="w-3.5 h-3.5" />
+                          </button>
+                          <button
+                            onClick={() => handleDeleteProperty(prop.id)}
+                            className="p-1.5 rounded-lg bg-rose-500/20 hover:bg-rose-500/30 text-rose-400 cursor-pointer"
+                            title="Delete"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
                       </td>
                     </tr>
                   ))}
@@ -755,21 +928,23 @@ export default function Admin() {
                             {loc.is_popular ? 'YES' : 'NO'}
                           </span>
                         </td>
-                        <td className="p-3 text-right space-x-2">
-                          <button
-                            onClick={() => handleOpenEditLocation(loc)}
-                            className="p-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white cursor-pointer"
-                            title="Edit Location"
-                          >
-                            <Edit2 className="w-3.5 h-3.5" />
-                          </button>
-                          <button
-                            onClick={() => handleDeleteLocation(loc.id)}
-                            className="p-1.5 rounded-lg bg-rose-500/20 hover:bg-rose-500/30 text-rose-400 cursor-pointer"
-                            title="Delete Location"
-                          >
-                            <Trash2 className="w-3.5 h-3.5" />
-                          </button>
+                        <td className="p-3 text-right whitespace-nowrap">
+                          <div className="flex items-center justify-end gap-1.5">
+                            <button
+                              onClick={() => handleOpenEditLocation(loc)}
+                              className="p-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white cursor-pointer"
+                              title="Edit Location"
+                            >
+                              <Edit2 className="w-3.5 h-3.5" />
+                            </button>
+                            <button
+                              onClick={() => handleDeleteLocation(loc.id)}
+                              className="p-1.5 rounded-lg bg-rose-500/20 hover:bg-rose-500/30 text-rose-400 cursor-pointer"
+                              title="Delete Location"
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </button>
+                          </div>
                         </td>
                       </tr>
                     ))}
@@ -842,28 +1017,30 @@ export default function Admin() {
                             {blog.is_published ? 'PUBLISHED' : 'DRAFT'}
                           </button>
                         </td>
-                        <td className="p-3 text-right space-x-2">
-                          <button
-                            onClick={() => window.open(`/blog/${blog.slug}`, '_blank')}
-                            className="p-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white cursor-pointer"
-                            title="Preview Article"
-                          >
-                            <Eye className="w-3.5 h-3.5" />
-                          </button>
-                          <button
-                            onClick={() => handleOpenEditBlog(blog)}
-                            className="p-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white cursor-pointer"
-                            title="Edit Article"
-                          >
-                            <Edit2 className="w-3.5 h-3.5" />
-                          </button>
-                          <button
-                            onClick={() => handleDeleteBlog(blog.id)}
-                            className="p-1.5 rounded-lg bg-rose-500/20 hover:bg-rose-500/30 text-rose-400 cursor-pointer"
-                            title="Delete Article"
-                          >
-                            <Trash2 className="w-3.5 h-3.5" />
-                          </button>
+                        <td className="p-3 text-right whitespace-nowrap">
+                          <div className="flex items-center justify-end gap-1.5">
+                            <button
+                              onClick={() => window.open(`/blog/${blog.slug}`, '_blank')}
+                              className="p-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white cursor-pointer"
+                              title="Preview Article"
+                            >
+                              <Eye className="w-3.5 h-3.5" />
+                            </button>
+                            <button
+                              onClick={() => handleOpenEditBlog(blog)}
+                              className="p-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white cursor-pointer"
+                              title="Edit Article"
+                            >
+                              <Edit2 className="w-3.5 h-3.5" />
+                            </button>
+                            <button
+                              onClick={() => handleDeleteBlog(blog.id)}
+                              className="p-1.5 rounded-lg bg-rose-500/20 hover:bg-rose-500/30 text-rose-400 cursor-pointer"
+                              title="Delete Article"
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </button>
+                          </div>
                         </td>
                       </tr>
                     ))}
@@ -976,23 +1153,25 @@ export default function Admin() {
                           className="w-32"
                         />
                       </td>
-                      <td className="p-3 text-right space-x-2">
-                        <button
-                          onClick={() => handleOpenEditUser(u)}
-                          className="p-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white cursor-pointer"
-                          title="Edit User Details"
-                        >
-                          <Edit2 className="w-3.5 h-3.5" />
-                        </button>
-                        {u.id !== user?.id && (
+                      <td className="p-3 text-right whitespace-nowrap">
+                        <div className="flex items-center justify-end gap-1.5">
                           <button
-                            onClick={() => handleDeleteUser(u.id)}
-                            className="p-1.5 rounded-lg bg-rose-500/20 hover:bg-rose-500/30 text-rose-400 cursor-pointer"
-                            title="Delete User"
+                            onClick={() => handleOpenEditUser(u)}
+                            className="p-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white cursor-pointer"
+                            title="Edit User Details"
                           >
-                            <Trash2 className="w-3.5 h-3.5" />
+                            <Edit2 className="w-3.5 h-3.5" />
                           </button>
-                        )}
+                          {u.id !== user?.id && (
+                            <button
+                              onClick={() => handleDeleteUser(u.id)}
+                              className="p-1.5 rounded-lg bg-rose-500/20 hover:bg-rose-500/30 text-rose-400 cursor-pointer"
+                              title="Delete User"
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </button>
+                          )}
+                        </div>
                       </td>
                     </tr>
                   ))}
@@ -1087,6 +1266,308 @@ export default function Admin() {
           )}
         </main>
       </div>
+
+      {/* CREATE / EDIT PROPERTY MODAL */}
+      {showPropertyModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-in fade-in">
+          <div className="bg-slate-900 border border-slate-800 rounded-3xl max-w-3xl w-full p-6 space-y-6 shadow-2xl relative max-h-[90vh] overflow-y-auto">
+            <div className="flex items-center justify-between border-b border-slate-800 pb-4">
+              <h3 className="text-xl font-bold text-white flex items-center gap-2">
+                <Building2 className="w-5 h-5 text-amber-400" />
+                {editingProperty ? 'Edit Property Listing' : 'Add New Property Listing'}
+              </h3>
+              <button
+                onClick={() => setShowPropertyModal(false)}
+                className="p-1 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 cursor-pointer"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {propertyModalError && (
+              <div className="p-3 rounded-xl bg-rose-500/10 border border-rose-500/30 text-rose-400 text-xs font-medium">
+                {propertyModalError}
+              </div>
+            )}
+
+            <form onSubmit={handleSaveProperty} className="space-y-4">
+              <div className="space-y-1">
+                <label className="text-xs font-semibold text-slate-300">Listing Title *</label>
+                <input
+                  type="text"
+                  required
+                  placeholder="e.g. Orchard View Luxury 2 BHK Apartment"
+                  value={propertyForm.title}
+                  onChange={(e) => setPropertyForm({ ...propertyForm, title: e.target.value })}
+                  className="w-full px-3.5 py-2.5 rounded-xl bg-slate-950 border border-slate-800 text-white text-xs placeholder:text-slate-600 focus:outline-none focus:border-amber-400"
+                />
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                <div className="space-y-1">
+                  <CustomSelect
+                    label="Property Type *"
+                    value={propertyForm.property_type_id}
+                    onChange={(val) => setPropertyForm({ ...propertyForm, property_type_id: val })}
+                    options={propertyTypesList.map((t) => ({
+                      value: String(t.id),
+                      label: t.name,
+                    }))}
+                  />
+                </div>
+
+                <div className="space-y-1">
+                  <CustomSelect
+                    label="Metro Location *"
+                    value={propertyForm.location_id}
+                    onChange={(val) => setPropertyForm({ ...propertyForm, location_id: val })}
+                    options={locationsList.map((l) => ({
+                      value: String(l.id),
+                      label: `${l.name} (${l.city})`,
+                    }))}
+                  />
+                </div>
+
+                <div className="space-y-1">
+                  <CustomSelect
+                    label="Listing Agent *"
+                    value={propertyForm.agent_id}
+                    onChange={(val) => setPropertyForm({ ...propertyForm, agent_id: val })}
+                    options={agentsList.map((a) => ({
+                      value: String(a.id),
+                      label: a.name,
+                    }))}
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                <div className="space-y-1">
+                  <label className="text-xs font-semibold text-slate-300">Price (INR ₹) *</label>
+                  <input
+                    type="number"
+                    required
+                    min="0"
+                    placeholder="15000000"
+                    value={propertyForm.price}
+                    onChange={(e) => setPropertyForm({ ...propertyForm, price: e.target.value })}
+                    className="w-full px-3.5 py-2.5 rounded-xl bg-slate-950 border border-slate-800 text-white text-xs placeholder:text-slate-600 focus:outline-none focus:border-amber-400"
+                  />
+                </div>
+
+                <div className="space-y-1">
+                  <CustomSelect
+                    label="Purpose *"
+                    value={propertyForm.purpose}
+                    onChange={(val) => setPropertyForm({ ...propertyForm, purpose: val as any })}
+                    options={[
+                      { value: 'buy', label: 'For Sale (Buy)' },
+                      { value: 'rent', label: 'For Rent' },
+                    ]}
+                  />
+                </div>
+
+                <div className="space-y-1">
+                  <label className="text-xs font-semibold text-slate-300">Bedrooms *</label>
+                  <input
+                    type="number"
+                    required
+                    min="0"
+                    value={propertyForm.bedrooms}
+                    onChange={(e) => setPropertyForm({ ...propertyForm, bedrooms: e.target.value })}
+                    className="w-full px-3.5 py-2.5 rounded-xl bg-slate-950 border border-slate-800 text-white text-xs placeholder:text-slate-600 focus:outline-none focus:border-amber-400"
+                  />
+                </div>
+
+                <div className="space-y-1">
+                  <label className="text-xs font-semibold text-slate-300">Bathrooms *</label>
+                  <input
+                    type="number"
+                    required
+                    min="0"
+                    value={propertyForm.bathrooms}
+                    onChange={(e) => setPropertyForm({ ...propertyForm, bathrooms: e.target.value })}
+                    className="w-full px-3.5 py-2.5 rounded-xl bg-slate-950 border border-slate-800 text-white text-xs placeholder:text-slate-600 focus:outline-none focus:border-amber-400"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                <div className="space-y-1">
+                  <label className="text-xs font-semibold text-slate-300">Area (Sq Ft) *</label>
+                  <input
+                    type="number"
+                    required
+                    min="0"
+                    placeholder="1800"
+                    value={propertyForm.area_sqft}
+                    onChange={(e) => setPropertyForm({ ...propertyForm, area_sqft: e.target.value })}
+                    className="w-full px-3.5 py-2.5 rounded-xl bg-slate-950 border border-slate-800 text-white text-xs placeholder:text-slate-600 focus:outline-none focus:border-amber-400"
+                  />
+                </div>
+
+                <div className="space-y-1">
+                  <CustomSelect
+                    label="Furnished Status *"
+                    value={propertyForm.furnished_status}
+                    onChange={(val) => setPropertyForm({ ...propertyForm, furnished_status: val as any })}
+                    options={[
+                      { value: 'furnished', label: 'Furnished' },
+                      { value: 'semi-furnished', label: 'Semi-Furnished' },
+                      { value: 'unfurnished', label: 'Unfurnished' },
+                    ]}
+                  />
+                </div>
+
+                <div className="space-y-1">
+                  <CustomSelect
+                    label="Listing Status *"
+                    value={propertyForm.property_status}
+                    onChange={(val) => setPropertyForm({ ...propertyForm, property_status: val as any })}
+                    options={[
+                      { value: 'available', label: 'Available' },
+                      { value: 'sold', label: 'Sold' },
+                      { value: 'rented', label: 'Rented' },
+                    ]}
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-1">
+                <label className="text-xs font-semibold text-slate-300">Full Property Address *</label>
+                <input
+                  type="text"
+                  required
+                  placeholder="Sindhu Bhavan Road, Bodakdev, Ahmedabad, Gujarat 380054"
+                  value={propertyForm.address}
+                  onChange={(e) => setPropertyForm({ ...propertyForm, address: e.target.value })}
+                  className="w-full px-3.5 py-2.5 rounded-xl bg-slate-950 border border-slate-800 text-white text-xs placeholder:text-slate-600 focus:outline-none focus:border-amber-400"
+                />
+              </div>
+
+              {/* Multi-Image Gallery Manager */}
+              <div className="space-y-3 p-4 rounded-2xl bg-slate-950/80 border border-slate-800">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <label className="text-xs font-bold text-white flex items-center gap-1.5">
+                      <Building2 className="w-4 h-4 text-amber-400" />
+                      Property Photo Gallery (Multiple Images)
+                    </label>
+                    <p className="text-[11px] text-slate-400">First photo will be set as the main cover photo for cards & search results.</p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={handleAddImageUrlInput}
+                    className="px-3 py-1.5 rounded-lg bg-amber-400/10 hover:bg-amber-400/20 text-amber-300 border border-amber-400/30 text-xs font-semibold flex items-center gap-1 cursor-pointer transition-colors"
+                  >
+                    <Plus className="w-3.5 h-3.5" /> Add Image URL
+                  </button>
+                </div>
+
+                {/* Thumbnails Strip */}
+                {propertyForm.image_urls.filter(Boolean).length > 0 && (
+                  <div className="flex items-center gap-2 overflow-x-auto pb-2">
+                    {propertyForm.image_urls.filter(Boolean).map((url, idx) => (
+                      <div key={idx} className="relative group shrink-0 w-20 h-14 rounded-lg overflow-hidden border border-slate-800 bg-slate-900">
+                        <img src={url} alt={`Gallery preview ${idx + 1}`} className="w-full h-full object-cover" />
+                        {idx === 0 && (
+                          <span className="absolute bottom-0 inset-x-0 bg-amber-400 text-slate-950 font-bold text-[9px] text-center py-0.5 uppercase tracking-tighter">
+                            Primary
+                          </span>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                {/* URL Input List */}
+                <div className="space-y-2">
+                  {propertyForm.image_urls.map((url, idx) => (
+                    <div key={idx} className="flex items-center gap-2">
+                      <span className="text-[11px] font-bold text-slate-500 w-6 text-right shrink-0">#{idx + 1}</span>
+                      <input
+                        type="text"
+                        placeholder={idx === 0 ? "Main Cover Photo URL (e.g. https://images.unsplash.com/...)" : `Gallery Photo #${idx + 1} URL`}
+                        value={url}
+                        onChange={(e) => handleImageUrlChange(idx, e.target.value)}
+                        className="w-full px-3.5 py-2 rounded-xl bg-slate-900 border border-slate-800 text-white text-xs placeholder:text-slate-600 focus:outline-none focus:border-amber-400"
+                      />
+                      {propertyForm.image_urls.length > 1 && (
+                        <button
+                          type="button"
+                          onClick={() => handleRemoveImageUrlInput(idx)}
+                          className="p-2 rounded-lg bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 border border-rose-500/30 cursor-pointer shrink-0"
+                          title="Remove image"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <div className="space-y-1">
+                <label className="text-xs font-semibold text-slate-300">Description *</label>
+                <textarea
+                  required
+                  rows={4}
+                  placeholder="Detailed property highlights, architectural specifications, neighborhood overview..."
+                  value={propertyForm.description}
+                  onChange={(e) => setPropertyForm({ ...propertyForm, description: e.target.value })}
+                  className="w-full px-3.5 py-2.5 rounded-xl bg-slate-950 border border-slate-800 text-white text-xs placeholder:text-slate-600 focus:outline-none focus:border-amber-400"
+                />
+              </div>
+
+              <div className="flex items-center gap-6 pt-2">
+                <div className="flex items-center gap-2">
+                  <input
+                    type="checkbox"
+                    id="is_prop_published"
+                    checked={propertyForm.is_published}
+                    onChange={(e) => setPropertyForm({ ...propertyForm, is_published: e.target.checked })}
+                    className="w-4 h-4 rounded bg-slate-950 border-slate-800 text-amber-400 focus:ring-0 cursor-pointer"
+                  />
+                  <label htmlFor="is_prop_published" className="text-xs text-slate-300 cursor-pointer">
+                    Published on website
+                  </label>
+                </div>
+
+                <div className="flex items-center gap-2">
+                  <input
+                    type="checkbox"
+                    id="is_prop_featured"
+                    checked={propertyForm.is_featured}
+                    onChange={(e) => setPropertyForm({ ...propertyForm, is_featured: e.target.checked })}
+                    className="w-4 h-4 rounded bg-slate-950 border-slate-800 text-amber-400 focus:ring-0 cursor-pointer"
+                  />
+                  <label htmlFor="is_prop_featured" className="text-xs text-amber-300 cursor-pointer font-semibold">
+                    Promote as Featured Listing
+                  </label>
+                </div>
+              </div>
+
+              <div className="pt-4 flex justify-end gap-3 border-t border-slate-800">
+                <button
+                  type="button"
+                  onClick={() => setShowPropertyModal(false)}
+                  className="px-4 py-2 rounded-xl bg-slate-800 text-slate-300 text-xs font-semibold hover:bg-slate-700 cursor-pointer"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={savingProperty}
+                  className="px-5 py-2 rounded-xl bg-amber-400 text-slate-950 text-xs font-bold hover:bg-amber-300 flex items-center gap-1.5 shadow-lg shadow-amber-400/20 cursor-pointer"
+                >
+                  {savingProperty && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
+                  {editingProperty ? 'Update Listing' : 'Create Listing'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
 
       {/* CREATE / EDIT USER MODAL */}
       {showUserModal && (

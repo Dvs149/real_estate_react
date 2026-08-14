@@ -190,12 +190,56 @@ class PropertyController extends Controller
         $validated = $request->validate([
             'title' => ['sometimes', 'string', 'max:255'],
             'description' => ['sometimes', 'string'],
+            'property_type_id' => ['sometimes', 'exists:property_types,id'],
+            'location_id' => ['sometimes', 'exists:locations,id'],
+            'agent_id' => ['sometimes', 'exists:agents,id'],
             'price' => ['sometimes', 'numeric', 'min:0'],
             'purpose' => ['sometimes', 'in:buy,rent'],
+            'bedrooms' => ['sometimes', 'integer', 'min:0'],
+            'bathrooms' => ['sometimes', 'integer', 'min:0'],
+            'area_sqft' => ['sometimes', 'integer', 'min:0'],
+            'furnished_status' => ['sometimes', 'in:furnished,semi-furnished,unfurnished'],
             'property_status' => ['sometimes', 'in:available,sold,rented'],
             'is_featured' => ['sometimes', 'boolean'],
             'is_published' => ['sometimes', 'boolean'],
+            'address' => ['sometimes', 'string'],
+            'primary_image' => ['nullable', 'string'],
+            'images' => ['nullable', 'array'],
         ]);
+
+        if (isset($validated['title']) && $validated['title'] !== $property->title) {
+            $validated['slug'] = Str::slug($validated['title']) . '-' . Str::random(5);
+        }
+
+        if (isset($validated['images']) && is_array($validated['images']) && count($validated['images']) > 0) {
+            $images = $validated['images'];
+            unset($validated['images']);
+            $property->images()->delete();
+            foreach ($images as $index => $imgUrl) {
+                PropertyImage::create([
+                    'property_id' => $property->id,
+                    'image_path' => $imgUrl,
+                    'is_primary' => $index === 0,
+                    'display_order' => $index,
+                ]);
+            }
+        } elseif (!empty($validated['primary_image'])) {
+            $primaryImg = $validated['primary_image'];
+            unset($validated['primary_image']);
+            $firstImg = $property->images()->where('is_primary', true)->first();
+            if ($firstImg) {
+                $firstImg->update(['image_path' => $primaryImg]);
+            } else {
+                PropertyImage::create([
+                    'property_id' => $property->id,
+                    'image_path' => $primaryImg,
+                    'is_primary' => true,
+                    'display_order' => 0,
+                ]);
+            }
+        } else {
+            unset($validated['primary_image']);
+        }
 
         $property->update($validated);
 
