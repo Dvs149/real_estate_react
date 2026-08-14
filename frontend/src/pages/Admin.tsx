@@ -36,6 +36,7 @@ import {
 import { Property, PropertyType, Agent, User, Enquiry, Appointment, Location, Blog, BlogCategory } from '../types';
 import CustomSelect, { SelectOption } from '../components/CustomSelect';
 import CustomDatePicker from '../components/CustomDatePicker';
+import ConfirmModal from '../components/ConfirmModal';
 import { formatDate } from '../utils/formatters';
 import {
   Shield,
@@ -103,6 +104,14 @@ export default function Admin() {
   const [categoriesList, setCategoriesList] = useState<BlogCategory[]>([]);
   const [propertyTypesList, setPropertyTypesList] = useState<PropertyType[]>([]);
   const [agentsList, setAgentsList] = useState<Agent[]>([]);
+
+  // Custom Delete Modal State
+  const [deleteConfirm, setDeleteConfirm] = useState<{
+    type: 'blog' | 'property' | 'user' | 'location';
+    id: number;
+    title: string;
+  } | null>(null);
+  const [deletingItem, setDeletingItem] = useState<boolean>(false);
 
   // Site Settings State
   const [siteSettings, setSiteSettings] = useState<SiteSettings>({
@@ -366,14 +375,8 @@ export default function Admin() {
     }
   };
 
-  const handleDeleteBlog = async (id: number) => {
-    if (!window.confirm('Are you sure you want to delete this blog article?')) return;
-    try {
-      await deleteBlog(id);
-      setBlogsList((prev) => prev.filter((b) => b.id !== id));
-    } catch (err) {
-      console.error(err);
-    }
+  const handleDeleteBlog = (id: number, title?: string) => {
+    setDeleteConfirm({ type: 'blog', id, title: title || 'this blog article' });
   };
 
   const handleOpenAddBlog = () => {
@@ -471,13 +474,40 @@ export default function Admin() {
     }
   };
 
-  const handleDeleteProperty = async (id: number) => {
-    if (!window.confirm('Are you sure you want to delete this listing?')) return;
+  const handleDeleteProperty = (id: number, title?: string) => {
+    setDeleteConfirm({ type: 'property', id, title: title || 'this property listing' });
+  };
+
+  const handleDeleteUser = (id: number, name?: string) => {
+    setDeleteConfirm({ type: 'user', id, title: name || 'this user account' });
+  };
+
+  const handleDeleteLocation = (id: number, name?: string) => {
+    setDeleteConfirm({ type: 'location', id, title: name || 'this location' });
+  };
+
+  const executeDelete = async () => {
+    if (!deleteConfirm) return;
+    setDeletingItem(true);
     try {
-      await deleteProperty(id);
-      setProperties((prev) => prev.filter((p) => p.id !== id));
-    } catch (err) {
-      console.error(err);
+      if (deleteConfirm.type === 'blog') {
+        await deleteBlog(deleteConfirm.id);
+        setBlogsList((prev) => prev.filter((b) => b.id !== deleteConfirm.id));
+      } else if (deleteConfirm.type === 'property') {
+        await deleteProperty(deleteConfirm.id);
+        setProperties((prev) => prev.filter((p) => p.id !== deleteConfirm.id));
+      } else if (deleteConfirm.type === 'user') {
+        await deleteAdminUser(deleteConfirm.id);
+        setUsersList((prev) => prev.filter((u) => u.id !== deleteConfirm.id));
+      } else if (deleteConfirm.type === 'location') {
+        await deleteLocation(deleteConfirm.id);
+        setLocationsList((prev) => prev.filter((l) => l.id !== deleteConfirm.id));
+      }
+    } catch (err: any) {
+      alert(err.message || 'Failed to delete item');
+    } finally {
+      setDeletingItem(false);
+      setDeleteConfirm(null);
     }
   };
 
@@ -554,16 +584,6 @@ export default function Admin() {
     }
   };
 
-  const handleDeleteUser = async (id: number) => {
-    if (!window.confirm('Are you sure you want to delete this user?')) return;
-    try {
-      await deleteAdminUser(id);
-      setUsersList((prev) => prev.filter((u) => u.id !== id));
-    } catch (err: any) {
-      alert(err.message || 'Failed to delete user');
-    }
-  };
-
   // Location Handlers
   const handleOpenAddLocation = () => {
     setEditingLocation(null);
@@ -609,16 +629,6 @@ export default function Admin() {
       console.error('Error saving location:', err);
     } finally {
       setSavingLocation(false);
-    }
-  };
-
-  const handleDeleteLocation = async (id: number) => {
-    if (!window.confirm('Are you sure you want to delete this location?')) return;
-    try {
-      await deleteLocation(id);
-      setLocationsList((prev) => prev.filter((l) => l.id !== id));
-    } catch (err) {
-      console.error('Error deleting location:', err);
     }
   };
 
@@ -1030,7 +1040,7 @@ export default function Admin() {
                             <Edit2 className="w-3.5 h-3.5" />
                           </button>
                           <button
-                            onClick={() => handleDeleteProperty(prop.id)}
+                            onClick={() => handleDeleteProperty(prop.id, prop.title)}
                             className="p-1.5 rounded-lg bg-rose-500/20 hover:bg-rose-500/30 text-rose-400 cursor-pointer"
                             title="Delete"
                           >
@@ -1110,7 +1120,7 @@ export default function Admin() {
                               <Edit2 className="w-3.5 h-3.5" />
                             </button>
                             <button
-                              onClick={() => handleDeleteLocation(loc.id)}
+                              onClick={() => handleDeleteLocation(loc.id, loc.name)}
                               className="p-1.5 rounded-lg bg-rose-500/20 hover:bg-rose-500/30 text-rose-400 cursor-pointer"
                               title="Delete Location"
                             >
@@ -1206,7 +1216,7 @@ export default function Admin() {
                               <Edit2 className="w-3.5 h-3.5" />
                             </button>
                             <button
-                              onClick={() => handleDeleteBlog(blog.id)}
+                              onClick={() => handleDeleteBlog(blog.id, blog.title)}
                               className="p-1.5 rounded-lg bg-rose-500/20 hover:bg-rose-500/30 text-rose-400 cursor-pointer"
                               title="Delete Article"
                             >
@@ -1582,7 +1592,7 @@ export default function Admin() {
                           </button>
                           {u.id !== user?.id && (
                             <button
-                              onClick={() => handleDeleteUser(u.id)}
+                              onClick={() => handleDeleteUser(u.id, u.name)}
                               className="p-1.5 rounded-lg bg-rose-500/20 hover:bg-rose-500/30 text-rose-400 cursor-pointer"
                               title="Delete User"
                             >
@@ -2687,6 +2697,26 @@ export default function Admin() {
           </div>
         </div>
       )}
+
+      {/* CUSTOM CONFIRM DELETE MODAL */}
+      <ConfirmModal
+        isOpen={!!deleteConfirm}
+        title={`Delete ${
+          deleteConfirm?.type === 'blog'
+            ? 'Blog Article'
+            : deleteConfirm?.type === 'property'
+            ? 'Property Listing'
+            : deleteConfirm?.type === 'user'
+            ? 'User Account'
+            : 'Location'
+        }`}
+        message={`Are you sure you want to delete "${deleteConfirm?.title}"? This action cannot be undone.`}
+        confirmText="Delete Permanently"
+        cancelText="Cancel"
+        loading={deletingItem}
+        onConfirm={executeDelete}
+        onCancel={() => setDeleteConfirm(null)}
+      />
     </div>
   );
 }
