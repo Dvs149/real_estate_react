@@ -16,7 +16,7 @@ const sortOptions: SelectOption[] = [
 ];
 
 export default function Properties() {
-  const [searchParams] = useSearchParams();
+  const [searchParams, setSearchParams] = useSearchParams();
 
   const [properties, setProperties] = useState<Property[]>([]);
   const [locations, setLocations] = useState<Location[]>([]);
@@ -53,7 +53,8 @@ export default function Properties() {
   }, []);
 
   useEffect(() => {
-    setFilters({
+    setFilters((prev) => ({
+      ...prev,
       q: searchParams.get('q') || '',
       purpose: searchParams.get('purpose') || '',
       location: searchParams.get('location') || '',
@@ -66,8 +67,8 @@ export default function Properties() {
       amenities: searchParams.get('amenities') ? searchParams.get('amenities')!.split(',') : [],
       sort: searchParams.get('sort') || 'newest',
       page: searchParams.get('page') || '1',
-    });
-  }, [searchParams]);
+    }));
+  }, [searchParams.toString()]);
 
   useEffect(() => {
     fetchPropertyList();
