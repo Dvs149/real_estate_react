@@ -480,7 +480,7 @@ class DatabaseSeeder extends Seeder
                 'views_count' => 610,
                 'images' => [
                     'https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?auto=format&fit=crop&q=80&w=1200',
-                    'https://images.unsplash.com/photo-1502672016976-1b80f8d1eb1f?auto=format&fit=crop&q=80&w=1200',
+                    'https://images.unsplash.com/photo-1502672260266-1c1ef2d93688?auto=format&fit=crop&q=80&w=1200',
                 ],
             ],
         ];

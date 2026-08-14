@@ -1469,7 +1469,14 @@ export default function Admin() {
                   <div className="flex items-center gap-2 overflow-x-auto pb-2">
                     {propertyForm.image_urls.filter(Boolean).map((url, idx) => (
                       <div key={idx} className="relative group shrink-0 w-20 h-14 rounded-lg overflow-hidden border border-slate-800 bg-slate-900">
-                        <img src={url} alt={`Gallery preview ${idx + 1}`} className="w-full h-full object-cover" />
+                        <img
+                          src={url}
+                          alt={`Gallery preview ${idx + 1}`}
+                          className="w-full h-full object-cover"
+                          onError={(e) => {
+                            (e.target as HTMLImageElement).src = 'https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?auto=format&fit=crop&q=80&w=300';
+                          }}
+                        />
                         {idx === 0 && (
                           <span className="absolute bottom-0 inset-x-0 bg-amber-400 text-slate-950 font-bold text-[9px] text-center py-0.5 uppercase tracking-tighter">
                             Primary

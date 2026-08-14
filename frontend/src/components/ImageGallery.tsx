@@ -37,6 +37,9 @@ export default function ImageGallery({ images, title }: ImageGalleryProps) {
           src={currentImage}
           alt={title}
           className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
+          onError={(e) => {
+            (e.target as HTMLImageElement).src = 'https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?auto=format&fit=crop&q=80&w=1200';
+          }}
         />
 
         {/* Fullscreen Icon */}
@@ -78,7 +81,14 @@ export default function ImageGallery({ images, title }: ImageGalleryProps) {
                 selectedIndex === index ? 'border-amber-400 opacity-100 scale-105 shadow-md shadow-amber-400/20' : 'border-transparent opacity-60 hover:opacity-100'
               }`}
             >
-              <img src={img.image_path} alt={`${title} ${index + 1}`} className="w-full h-full object-cover" />
+              <img
+                src={img.image_path}
+                alt={`${title} ${index + 1}`}
+                className="w-full h-full object-cover"
+                onError={(e) => {
+                  (e.target as HTMLImageElement).src = 'https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?auto=format&fit=crop&q=80&w=300';
+                }}
+              />
             </button>
           ))}
         </div>
@@ -98,6 +108,9 @@ export default function ImageGallery({ images, title }: ImageGalleryProps) {
             src={currentImage}
             alt={title}
             className="max-w-full max-h-[85vh] object-contain rounded-2xl shadow-2xl"
+            onError={(e) => {
+              (e.target as HTMLImageElement).src = 'https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?auto=format&fit=crop&q=80&w=1200';
+            }}
           />
 
           {images.length > 1 && (
