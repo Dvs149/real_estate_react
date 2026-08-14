@@ -10,7 +10,7 @@ interface AuthContextType {
   dismissInactivityNotice: () => void;
   login: (token: string, user: User) => void;
   logout: () => Promise<void>;
-  updateProfile: (data: Partial<User>) => Promise<void>;
+  updateProfile: (data: Record<string, any>) => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -150,13 +150,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     localStorage.setItem('auth_user', JSON.stringify(newUser));
   };
 
-  const updateProfile = async (data: Partial<User>) => {
+  const updateProfile = async (data: Record<string, any>) => {
     const res = await fetchApi<{ user: User }>('/auth/profile', {
       method: 'PUT',
       body: JSON.stringify(data),
     });
     setUser(res.user);
     localStorage.setItem('auth_user', JSON.stringify(res.user));
+    window.dispatchEvent(new Event('auth_state_changed'));
   };
 
   const dismissInactivityNotice = () => {

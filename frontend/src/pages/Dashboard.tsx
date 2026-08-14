@@ -6,7 +6,7 @@ import PropertyCard from '../components/PropertyCard';
 import CustomDatePicker from '../components/CustomDatePicker';
 import CustomSelect from '../components/CustomSelect';
 import { Property, Enquiry, Appointment } from '../types';
-import { User, Heart, MessageSquare, Calendar, Shield, Save, Loader2, Clock, MapPin, Mail, Phone, Edit2, CheckCircle2 } from 'lucide-react';
+import { User, Heart, MessageSquare, Calendar, Shield, Save, Loader2, Clock, MapPin, Mail, Phone, Edit2, CheckCircle2, Lock, Key, Camera, AlertCircle } from 'lucide-react';
 import { formatDate } from '../utils/formatters';
 
 export default function Dashboard() {
@@ -57,11 +57,17 @@ export default function Dashboard() {
     }
   };
 
-  // Profile form state
+  // Profile & Security form state
   const [name, setName] = useState(user?.name || '');
+  const [email, setEmail] = useState(user?.email || '');
   const [phone, setPhone] = useState(user?.phone || '');
+  const [avatar, setAvatar] = useState(user?.avatar || '');
+  const [currentPassword, setCurrentPassword] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+
   const [savingProfile, setSavingProfile] = useState(false);
-  const [profileMsg, setProfileMsg] = useState('');
+  const [profileFeedback, setProfileFeedback] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
 
   useEffect(() => {
     if (!authLoading && !user) {
@@ -72,7 +78,9 @@ export default function Dashboard() {
   useEffect(() => {
     if (user) {
       setName(user.name);
+      setEmail(user.email);
       setPhone(user.phone || '');
+      setAvatar(user.avatar || '');
       loadTabData();
     }
   }, [user, activeTab]);
@@ -100,12 +108,46 @@ export default function Dashboard() {
   const handleProfileSave = async (e: React.FormEvent) => {
     e.preventDefault();
     setSavingProfile(true);
-    setProfileMsg('');
+    setProfileFeedback(null);
+
+    if (currentPassword || newPassword || confirmPassword) {
+      if (!currentPassword) {
+        setProfileFeedback({ type: 'error', message: 'Current password is required to change your password.' });
+        setSavingProfile(false);
+        return;
+      }
+      if (newPassword !== confirmPassword) {
+        setProfileFeedback({ type: 'error', message: 'New password and confirm password do not match.' });
+        setSavingProfile(false);
+        return;
+      }
+      if (newPassword.length < 6) {
+        setProfileFeedback({ type: 'error', message: 'New password must be at least 6 characters long.' });
+        setSavingProfile(false);
+        return;
+      }
+    }
+
     try {
-      await updateProfile({ name, phone });
-      setProfileMsg('Profile updated successfully!');
+      const payload: Record<string, any> = {
+        name,
+        email,
+        phone,
+        avatar,
+      };
+
+      if (currentPassword && newPassword) {
+        payload.current_password = currentPassword;
+        payload.password = newPassword;
+      }
+
+      await updateProfile(payload);
+      setProfileFeedback({ type: 'success', message: 'Profile & account information updated successfully!' });
+      setCurrentPassword('');
+      setNewPassword('');
+      setConfirmPassword('');
     } catch (err: any) {
-      setProfileMsg(err.message || 'Failed to update profile');
+      setProfileFeedback({ type: 'error', message: err.message || 'Failed to update profile' });
     } finally {
       setSavingProfile(false);
     }
@@ -187,49 +229,160 @@ export default function Dashboard() {
 
       {/* Tab Contents */}
       {activeTab === 'profile' && (
-        <div className="max-w-xl p-8 rounded-3xl bg-slate-900 border border-slate-800 space-y-6 shadow-xl">
-          <h2 className="text-xl font-bold text-white">Account Information</h2>
-          {profileMsg && <p className="text-xs font-semibold text-emerald-400 bg-emerald-500/10 p-3 rounded-xl border border-emerald-500/30">{profileMsg}</p>}
-
-          <form onSubmit={handleProfileSave} className="space-y-4">
-            <div>
-              <label className="text-xs font-semibold text-slate-300 block mb-1">Email Address (Read only)</label>
-              <input
-                type="email"
-                disabled
-                value={user.email}
-                className="w-full px-4 py-2.5 rounded-xl bg-slate-950/50 border border-slate-800 text-slate-500 text-xs cursor-not-allowed"
-              />
+        <div className="max-w-2xl p-6 sm:p-8 rounded-3xl bg-slate-900 border border-slate-800 space-y-8 shadow-2xl">
+          <div className="flex items-center gap-4 border-b border-slate-800 pb-6">
+            <div className="relative group">
+              <div className="w-16 h-16 rounded-2xl bg-amber-400 text-slate-950 font-black text-2xl flex items-center justify-center shadow-lg shadow-amber-400/20 overflow-hidden">
+                {avatar ? (
+                  <img src={avatar} alt={name} className="w-full h-full object-cover" />
+                ) : (
+                  user.name.charAt(0).toUpperCase()
+                )}
+              </div>
             </div>
-
             <div>
-              <label className="text-xs font-semibold text-slate-300 block mb-1">Full Name</label>
-              <input
-                type="text"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                className="w-full px-4 py-2.5 rounded-xl bg-slate-950 border border-slate-800 text-white text-xs focus:outline-none focus:border-amber-400"
-              />
+              <h2 className="text-xl font-bold text-white flex items-center gap-2">
+                {user.name}
+                <span className="text-[10px] font-mono uppercase px-2 py-0.5 rounded-full bg-amber-400/10 border border-amber-400/30 text-amber-400 font-extrabold">
+                  {user.role}
+                </span>
+              </h2>
+              <p className="text-xs text-slate-400">{user.email}</p>
             </div>
+          </div>
 
-            <div>
-              <label className="text-xs font-semibold text-slate-300 block mb-1">Phone Number</label>
-              <input
-                type="tel"
-                value={phone}
-                onChange={(e) => setPhone(e.target.value)}
-                placeholder="+91 90123 45678"
-                className="w-full px-4 py-2.5 rounded-xl bg-slate-950 border border-slate-800 text-white text-xs focus:outline-none focus:border-amber-400"
-              />
-            </div>
-
-            <button
-              type="submit"
-              disabled={savingProfile}
-              className="py-3 px-6 rounded-xl bg-amber-400 text-slate-950 font-bold text-xs hover:bg-amber-300 flex items-center gap-2 shadow-lg shadow-amber-400/20 cursor-pointer"
+          {profileFeedback && (
+            <div
+              className={`p-4 rounded-2xl text-xs font-semibold flex items-center gap-2.5 border ${
+                profileFeedback.type === 'success'
+                  ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-400'
+                  : 'bg-rose-500/10 border-rose-500/30 text-rose-400'
+              }`}
             >
-              <Save className="w-4 h-4" /> Save Profile Updates
-            </button>
+              {profileFeedback.type === 'success' ? (
+                <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
+              ) : (
+                <AlertCircle className="w-4 h-4 text-rose-400 shrink-0" />
+              )}
+              <span>{profileFeedback.message}</span>
+            </div>
+          )}
+
+          <form onSubmit={handleProfileSave} className="space-y-8">
+            {/* Personal Details */}
+            <div className="space-y-4">
+              <h3 className="text-sm font-bold text-white uppercase tracking-wider text-amber-400 flex items-center gap-2">
+                <User className="w-4 h-4" /> Personal Information
+              </h3>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label className="text-xs font-semibold text-slate-300 block mb-1">Full Name</label>
+                  <input
+                    type="text"
+                    required
+                    value={name}
+                    onChange={(e) => setName(e.target.value)}
+                    placeholder="John Doe"
+                    className="w-full px-4 py-2.5 rounded-xl bg-slate-950 border border-slate-800 text-white text-xs focus:outline-none focus:border-amber-400"
+                  />
+                </div>
+
+                <div>
+                  <label className="text-xs font-semibold text-slate-300 block mb-1">Email Address</label>
+                  <input
+                    type="email"
+                    required
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    placeholder="john@example.com"
+                    className="w-full px-4 py-2.5 rounded-xl bg-slate-950 border border-slate-800 text-white text-xs focus:outline-none focus:border-amber-400"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label className="text-xs font-semibold text-slate-300 block mb-1">Phone Number</label>
+                  <input
+                    type="tel"
+                    value={phone}
+                    onChange={(e) => setPhone(e.target.value)}
+                    placeholder="+91 90123 45678"
+                    className="w-full px-4 py-2.5 rounded-xl bg-slate-950 border border-slate-800 text-white text-xs focus:outline-none focus:border-amber-400"
+                  />
+                </div>
+
+                <div>
+                  <label className="text-xs font-semibold text-slate-300 block mb-1">Profile Avatar URL</label>
+                  <input
+                    type="url"
+                    value={avatar}
+                    onChange={(e) => setAvatar(e.target.value)}
+                    placeholder="https://images.unsplash.com/photo-..."
+                    className="w-full px-4 py-2.5 rounded-xl bg-slate-950 border border-slate-800 text-white text-xs focus:outline-none focus:border-amber-400"
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* Password & Security */}
+            <div className="space-y-4 border-t border-slate-800 pt-6">
+              <h3 className="text-sm font-bold text-white uppercase tracking-wider text-amber-400 flex items-center gap-2">
+                <Lock className="w-4 h-4" /> Change Password (Optional)
+              </h3>
+
+              <div>
+                <label className="text-xs font-semibold text-slate-300 block mb-1">Current Password</label>
+                <input
+                  type="password"
+                  value={currentPassword}
+                  onChange={(e) => setCurrentPassword(e.target.value)}
+                  placeholder="Enter current password to authorize change"
+                  className="w-full px-4 py-2.5 rounded-xl bg-slate-950 border border-slate-800 text-white text-xs focus:outline-none focus:border-amber-400"
+                />
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label className="text-xs font-semibold text-slate-300 block mb-1">New Password</label>
+                  <input
+                    type="password"
+                    value={newPassword}
+                    onChange={(e) => setNewPassword(e.target.value)}
+                    placeholder="Minimum 6 characters"
+                    className="w-full px-4 py-2.5 rounded-xl bg-slate-950 border border-slate-800 text-white text-xs focus:outline-none focus:border-amber-400"
+                  />
+                </div>
+
+                <div>
+                  <label className="text-xs font-semibold text-slate-300 block mb-1">Confirm New Password</label>
+                  <input
+                    type="password"
+                    value={confirmPassword}
+                    onChange={(e) => setConfirmPassword(e.target.value)}
+                    placeholder="Re-enter new password"
+                    className="w-full px-4 py-2.5 rounded-xl bg-slate-950 border border-slate-800 text-white text-xs focus:outline-none focus:border-amber-400"
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* Action Bar */}
+            <div className="pt-4 border-t border-slate-800 flex justify-end">
+              <button
+                type="submit"
+                disabled={savingProfile}
+                className="py-3 px-6 rounded-2xl bg-amber-400 text-slate-950 font-bold text-xs hover:bg-amber-300 flex items-center gap-2 shadow-lg shadow-amber-400/20 cursor-pointer transition-all hover:scale-[1.02]"
+              >
+                {savingProfile ? (
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                ) : (
+                  <Save className="w-4 h-4" />
+                )}
+                Save Account Updates
+              </button>
+            </div>
           </form>
         </div>
       )}

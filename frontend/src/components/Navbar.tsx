@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useLocation, useNavigate, useSearchParams } from 'react-router-dom';
-import { Building2, Heart, Menu, X, LogOut, LayoutDashboard, Shield, ChevronDown } from 'lucide-react';
+import { Building2, Heart, Menu, X, LogOut, LayoutDashboard, Shield, ChevronDown, User as UserIcon } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { useAuth } from '../hooks/useAuth';
 
@@ -153,6 +153,15 @@ export default function Navbar() {
                       Admin Control Suite
                     </Link>
                   )}
+
+                  <Link
+                    to="/dashboard?tab=profile"
+                    onClick={() => setUserDropdownOpen(false)}
+                    className="flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-semibold text-slate-300 hover:bg-slate-800/60 hover:text-white"
+                  >
+                    <UserIcon className="w-4 h-4 text-emerald-400" />
+                    Edit Profile & Info
+                  </Link>
 
                   <Link
                     to="/dashboard"

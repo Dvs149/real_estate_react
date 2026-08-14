@@ -82,12 +82,39 @@ class AuthController extends Controller
         $user = $request->user();
 
         $validated = $request->validate([
-            'name' => ['required', 'string', 'max:255'],
+            'name' => ['sometimes', 'required', 'string', 'max:255'],
+            'email' => ['sometimes', 'required', 'string', 'email', 'max:255', 'unique:users,email,' . $user->id],
             'phone' => ['nullable', 'string', 'max:20'],
             'avatar' => ['nullable', 'string'],
+            'current_password' => ['nullable', 'string'],
+            'password' => ['nullable', 'string', 'min:6'],
         ]);
 
-        $user->update($validated);
+        if (!empty($validated['current_password']) || !empty($validated['password'])) {
+            if (empty($validated['current_password'])) {
+                return response()->json([
+                    'message' => 'Current password is required to change password.',
+                ], 422);
+            }
+            if (!Hash::check($validated['current_password'], $user->password)) {
+                return response()->json([
+                    'message' => 'The provided current password does not match our records.',
+                ], 422);
+            }
+            if (empty($validated['password'])) {
+                return response()->json([
+                    'message' => 'Please provide a new password.',
+                ], 422);
+            }
+            $user->password = Hash::make($validated['password']);
+        }
+
+        if (isset($validated['name'])) $user->name = $validated['name'];
+        if (isset($validated['email'])) $user->email = $validated['email'];
+        if (array_key_exists('phone', $validated)) $user->phone = $validated['phone'];
+        if (array_key_exists('avatar', $validated)) $user->avatar = $validated['avatar'];
+
+        $user->save();
 
         return response()->json([
             'message' => 'Profile updated successfully',
