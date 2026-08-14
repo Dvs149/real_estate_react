@@ -28,3 +28,4 @@ Thumbs.db
 /frontend/node_modules
 /frontend/.next
 .env_copy
+.refact

@@ -1,6 +1,7 @@
 import React from 'react';
-import { Search, RotateCcw, Filter } from 'lucide-react';
+import { Search, RotateCcw, Filter, MapPin, Building2, Sofa } from 'lucide-react';
 import { Location, PropertyType, Amenity } from '../types';
+import CustomSelect, { SelectOption } from './CustomSelect';
 
 interface FilterSidebarProps {
   filters: {
@@ -45,8 +46,33 @@ export default function FilterSidebar({
     });
   };
 
+  // Dropdown options
+  const locationOptions: SelectOption[] = [
+    { value: '', label: 'All Cities & Regions' },
+    ...locations.map((loc) => ({
+      value: loc.slug,
+      label: `${loc.city} (${loc.name})`,
+      description: loc.state ? `${loc.state}, ${loc.country || 'India'}` : undefined,
+    })),
+  ];
+
+  const propertyTypeOptions: SelectOption[] = [
+    { value: '', label: 'All Property Types' },
+    ...propertyTypes.map((t) => ({
+      value: t.slug,
+      label: t.name,
+    })),
+  ];
+
+  const furnishingOptions: SelectOption[] = [
+    { value: '', label: 'Any Furnishing' },
+    { value: 'furnished', label: 'Fully Furnished' },
+    { value: 'semi-furnished', label: 'Semi-Furnished' },
+    { value: 'unfurnished', label: 'Unfurnished' },
+  ];
+
   return (
-    <aside className="w-full lg:w-80 shrink-0 bg-slate-900/90 border border-slate-800 rounded-3xl p-6 shadow-xl space-y-6">
+    <aside className="w-full lg:w-80 shrink-0 bg-slate-900/90 backdrop-blur-xl border border-slate-800 rounded-3xl p-6 shadow-xl space-y-6">
       {/* Title & Reset */}
       <div className="flex items-center justify-between border-b border-slate-800 pb-4">
         <div className="flex items-center gap-2">
@@ -72,7 +98,7 @@ export default function FilterSidebar({
             placeholder="Search location, title..."
             value={filters.q}
             onChange={(e) => handleInputChange('q', e.target.value)}
-            className="w-full pl-9 pr-4 py-2.5 rounded-xl bg-slate-950 border border-slate-800 text-white text-xs placeholder:text-slate-500 focus:outline-none focus:border-amber-400"
+            className="w-full pl-9 pr-4 py-2.5 rounded-xl bg-slate-950 border border-slate-800 text-white text-xs placeholder:text-slate-500 focus:outline-none focus:border-amber-400 transition-colors"
           />
           <Search className="w-4 h-4 text-slate-500 absolute left-3 top-3" />
         </div>
@@ -100,38 +126,25 @@ export default function FilterSidebar({
       </div>
 
       {/* City / Location Dropdown */}
-      <div className="min-w-0 w-full">
-        <label className="text-xs font-semibold text-slate-300 block mb-2">City / Location</label>
-        <select
-          value={filters.location}
-          onChange={(e) => handleInputChange('location', e.target.value)}
-          className="w-full min-w-0 px-3.5 py-2.5 rounded-xl bg-slate-950 border border-slate-800 text-white text-xs focus:outline-none focus:border-amber-400 cursor-pointer truncate"
-        >
-          <option value="">All Cities & Regions</option>
-          {locations.map((loc) => (
-            <option key={loc.id} value={loc.slug}>
-              {loc.city} ({loc.name})
-            </option>
-          ))}
-        </select>
-      </div>
+      <CustomSelect
+        label="City / Location"
+        value={filters.location}
+        onChange={(val) => handleInputChange('location', val)}
+        options={locationOptions}
+        placeholder="All Cities & Regions"
+        icon={<MapPin className="w-3.5 h-3.5" />}
+        searchable
+      />
 
-      {/* Property Type */}
-      <div className="min-w-0 w-full">
-        <label className="text-xs font-semibold text-slate-300 block mb-2">Property Type</label>
-        <select
-          value={filters.type}
-          onChange={(e) => handleInputChange('type', e.target.value)}
-          className="w-full min-w-0 px-3.5 py-2.5 rounded-xl bg-slate-950 border border-slate-800 text-white text-xs focus:outline-none focus:border-amber-400 cursor-pointer truncate"
-        >
-          <option value="">All Property Types</option>
-          {propertyTypes.map((t) => (
-            <option key={t.id} value={t.slug}>
-              {t.name}
-            </option>
-          ))}
-        </select>
-      </div>
+      {/* Property Type Dropdown */}
+      <CustomSelect
+        label="Property Type"
+        value={filters.type}
+        onChange={(val) => handleInputChange('type', val)}
+        options={propertyTypeOptions}
+        placeholder="All Property Types"
+        icon={<Building2 className="w-3.5 h-3.5" />}
+      />
 
       {/* Bedrooms */}
       <div>
@@ -144,7 +157,7 @@ export default function FilterSidebar({
               onClick={() => handleInputChange('bedrooms', b)}
               className={`flex-1 py-2 rounded-xl font-semibold border transition-all cursor-pointer ${
                 filters.bedrooms === b
-                  ? 'bg-amber-400 text-slate-950 border-amber-400 font-bold'
+                  ? 'bg-amber-400 text-slate-950 border-amber-400 font-bold shadow-md shadow-amber-400/20'
                   : 'bg-slate-950 text-slate-300 border-slate-800 hover:border-slate-700'
               }`}
             >
@@ -154,20 +167,15 @@ export default function FilterSidebar({
         </div>
       </div>
 
-      {/* Furnishing */}
-      <div>
-        <label className="text-xs font-semibold text-slate-300 block mb-2">Furnishing</label>
-        <select
-          value={filters.furnished_status}
-          onChange={(e) => handleInputChange('furnished_status', e.target.value)}
-          className="w-full px-3.5 py-2.5 rounded-xl bg-slate-950 border border-slate-800 text-white text-xs focus:outline-none focus:border-amber-400 cursor-pointer"
-        >
-          <option value="">Any Furnishing</option>
-          <option value="furnished">Fully Furnished</option>
-          <option value="semi-furnished">Semi-Furnished</option>
-          <option value="unfurnished">Unfurnished</option>
-        </select>
-      </div>
+      {/* Furnishing Dropdown */}
+      <CustomSelect
+        label="Furnishing"
+        value={filters.furnished_status}
+        onChange={(val) => handleInputChange('furnished_status', val)}
+        options={furnishingOptions}
+        placeholder="Any Furnishing"
+        icon={<Sofa className="w-3.5 h-3.5" />}
+      />
 
       {/* Amenities Checkboxes */}
       {amenitiesList.length > 0 && (

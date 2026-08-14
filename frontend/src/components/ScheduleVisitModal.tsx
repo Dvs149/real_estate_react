@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Property } from '../types';
 import { X, Calendar, Clock, CheckCircle2 } from 'lucide-react';
 import { submitAppointment } from '../services/api';
+import CustomSelect, { SelectOption } from './CustomSelect';
 
 interface ScheduleVisitModalProps {
   property: Property;
@@ -28,6 +29,10 @@ export default function ScheduleVisitModal({ property, isOpen, onClose }: Schedu
   }
 
   const timeSlots = ['09:30 AM', '11:00 AM', '02:00 PM', '04:30 PM', '06:00 PM'];
+  const timeSlotOptions: SelectOption[] = timeSlots.map((slot) => ({
+    value: slot,
+    label: slot,
+  }));
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -98,20 +103,14 @@ export default function ScheduleVisitModal({ property, isOpen, onClose }: Schedu
               </div>
 
               <div>
-                <label className="text-xs font-semibold text-slate-300 block mb-1 flex items-center gap-1">
-                  <Clock className="w-3.5 h-3.5 text-amber-400" /> Time Slot
-                </label>
-                <select
+                <CustomSelect
+                  label="Time Slot"
                   value={timeSlot}
-                  onChange={(e) => setTimeSlot(e.target.value)}
-                  className="w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-800 text-white text-xs focus:outline-none focus:border-amber-400"
-                >
-                  {timeSlots.map((slot) => (
-                    <option key={slot} value={slot}>
-                      {slot}
-                    </option>
-                  ))}
-                </select>
+                  onChange={setTimeSlot}
+                  options={timeSlotOptions}
+                  placeholder="Select Time"
+                  icon={<Clock className="w-3.5 h-3.5 text-amber-400" />}
+                />
               </div>
             </div>
 

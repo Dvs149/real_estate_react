@@ -4,6 +4,7 @@ import { Search, MapPin, Home, DollarSign } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { Location, PropertyType } from '../types';
 import { getLocations, getPropertyTypes } from '../services/api';
+import CustomSelect, { SelectOption } from './CustomSelect';
 
 interface HeroSearchProps {
   locations?: Location[];
@@ -56,8 +57,32 @@ export default function HeroSearch({ locations: initialLocations = [], propertyT
     navigate(`/properties?${query.toString()}`);
   };
 
+  const locationOptions: SelectOption[] = [
+    { value: '', label: 'All Locations' },
+    ...locations.map((loc) => ({
+      value: loc.slug,
+      label: `${loc.city} (${loc.name})`,
+      description: loc.state ? `${loc.state}, ${loc.country || 'India'}` : undefined,
+    })),
+  ];
+
+  const propertyTypeOptions: SelectOption[] = [
+    { value: '', label: 'All Property Types' },
+    ...propertyTypes.map((t) => ({
+      value: t.slug,
+      label: t.name,
+    })),
+  ];
+
+  const budgetOptions: SelectOption[] = [
+    { value: '', label: 'Any Budget' },
+    { value: 'under_2cr', label: 'Under ₹2 Cr' },
+    { value: '2cr_5cr', label: '₹2 Cr - ₹5 Cr' },
+    { value: 'above_5cr', label: '₹5 Cr + Ultra Luxury' },
+  ];
+
   return (
-    <div className="w-full max-w-5xl mx-auto self-stretch bg-slate-900/90 backdrop-blur-xl p-3 sm:p-6 rounded-2xl sm:rounded-3xl border border-slate-700/60 shadow-2xl shadow-black/80 box-border overflow-hidden">
+    <div className="w-full max-w-5xl mx-auto self-stretch bg-slate-900/90 backdrop-blur-xl p-3 sm:p-6 rounded-2xl sm:rounded-3xl border border-slate-700/60 shadow-2xl shadow-black/80 box-border overflow-visible">
       {/* Purpose Tabs */}
       <div className="flex items-center gap-1.5 sm:gap-2 mb-3 sm:mb-4 pb-3 sm:pb-4 border-b border-slate-800">
         <button
@@ -97,58 +122,46 @@ export default function HeroSearch({ locations: initialLocations = [], propertyT
       {/* Inputs Form */}
       <form onSubmit={handleSearch} className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-[repeat(4,minmax(0,1fr))] gap-2.5 sm:gap-3 w-full">
         {/* Location Dropdown */}
-        <div className="min-w-0 w-full bg-slate-950/70 border border-slate-800 rounded-xl sm:rounded-2xl p-2.5 sm:p-3 flex flex-col justify-center focus-within:border-amber-400 transition-colors">
-          <label className="text-[10px] font-bold text-amber-400/90 uppercase tracking-wider mb-0.5 flex items-center gap-1 shrink-0">
+        <div className="min-w-0 w-full bg-slate-950/70 border border-slate-800 rounded-xl sm:rounded-2xl p-2 sm:p-2.5 flex flex-col justify-center focus-within:border-amber-400 transition-colors">
+          <label className="text-[10px] font-bold text-amber-400/90 uppercase tracking-wider px-1 mb-0.5 flex items-center gap-1 shrink-0">
             <MapPin className="w-3 h-3 shrink-0" /> Location
           </label>
-          <select
+          <CustomSelect
             value={location}
-            onChange={(e) => setLocation(e.target.value)}
-            className="w-full min-w-0 bg-transparent text-white text-xs sm:text-sm focus:outline-none cursor-pointer truncate"
-          >
-            <option value="" className="bg-slate-900 text-slate-300">All Locations</option>
-            {locations.map((loc) => (
-              <option key={loc.id} value={loc.slug} className="bg-slate-900 text-white">
-                {loc.city} ({loc.name})
-              </option>
-            ))}
-          </select>
+            onChange={setLocation}
+            options={locationOptions}
+            placeholder="All Locations"
+            variant="hero"
+            searchable
+          />
         </div>
 
         {/* Property Type Dropdown */}
-        <div className="min-w-0 w-full bg-slate-950/70 border border-slate-800 rounded-xl sm:rounded-2xl p-2.5 sm:p-3 flex flex-col justify-center focus-within:border-amber-400 transition-colors">
-          <label className="text-[10px] font-bold text-amber-400/90 uppercase tracking-wider mb-0.5 flex items-center gap-1 shrink-0">
+        <div className="min-w-0 w-full bg-slate-950/70 border border-slate-800 rounded-xl sm:rounded-2xl p-2 sm:p-2.5 flex flex-col justify-center focus-within:border-amber-400 transition-colors">
+          <label className="text-[10px] font-bold text-amber-400/90 uppercase tracking-wider px-1 mb-0.5 flex items-center gap-1 shrink-0">
             <Home className="w-3 h-3 shrink-0" /> Property Type
           </label>
-          <select
+          <CustomSelect
             value={type}
-            onChange={(e) => setType(e.target.value)}
-            className="w-full min-w-0 bg-transparent text-white text-xs sm:text-sm focus:outline-none cursor-pointer truncate"
-          >
-            <option value="" className="bg-slate-900 text-slate-300">All Property Types</option>
-            {propertyTypes.map((t) => (
-              <option key={t.id} value={t.slug} className="bg-slate-900 text-white">
-                {t.name}
-              </option>
-            ))}
-          </select>
+            onChange={setType}
+            options={propertyTypeOptions}
+            placeholder="All Property Types"
+            variant="hero"
+          />
         </div>
 
         {/* Price Range Dropdown */}
-        <div className="min-w-0 w-full bg-slate-950/70 border border-slate-800 rounded-xl sm:rounded-2xl p-2.5 sm:p-3 flex flex-col justify-center focus-within:border-amber-400 transition-colors">
-          <label className="text-[10px] font-bold text-amber-400/90 uppercase tracking-wider mb-0.5 flex items-center gap-1 shrink-0">
+        <div className="min-w-0 w-full bg-slate-950/70 border border-slate-800 rounded-xl sm:rounded-2xl p-2 sm:p-2.5 flex flex-col justify-center focus-within:border-amber-400 transition-colors">
+          <label className="text-[10px] font-bold text-amber-400/90 uppercase tracking-wider px-1 mb-0.5 flex items-center gap-1 shrink-0">
             <DollarSign className="w-3 h-3 shrink-0" /> Budget Range
           </label>
-          <select
+          <CustomSelect
             value={priceRange}
-            onChange={(e) => setPriceRange(e.target.value)}
-            className="w-full min-w-0 bg-transparent text-white text-xs sm:text-sm focus:outline-none cursor-pointer truncate"
-          >
-            <option value="" className="bg-slate-900 text-slate-300">Any Budget</option>
-            <option value="under_2cr" className="bg-slate-900 text-white">Under ₹2 Cr</option>
-            <option value="2cr_5cr" className="bg-slate-900 text-white">₹2 Cr - ₹5 Cr</option>
-            <option value="above_5cr" className="bg-slate-900 text-white">₹5 Cr + Ultra Luxury</option>
-          </select>
+            onChange={setPriceRange}
+            options={budgetOptions}
+            placeholder="Any Budget"
+            variant="hero"
+          />
         </div>
 
         {/* Submit Search Button */}

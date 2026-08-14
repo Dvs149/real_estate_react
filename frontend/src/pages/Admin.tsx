@@ -22,6 +22,7 @@ import {
   SiteSettings,
 } from '../services/api';
 import { Property, User, Enquiry, Appointment, Location } from '../types';
+import CustomSelect, { SelectOption } from '../components/CustomSelect';
 import {
   Shield,
   Building2,
@@ -699,26 +700,17 @@ export default function Admin() {
                       <td className="p-3 text-amber-400">{enq.property?.title || 'General Enquiry'}</td>
                       <td className="p-3 text-slate-400 max-w-[200px] truncate">{enq.message}</td>
                       <td className="p-3">
-                        <div className="relative inline-block">
-                          <select
-                            value={enq.status}
-                            onChange={(e) => handleEnquiryStatusChange(enq.id, e.target.value)}
-                            className={`appearance-none pl-3 pr-7 py-1.5 rounded-xl border text-xs font-bold cursor-pointer transition-colors focus:outline-none focus:ring-1 ${
-                              enq.status === 'new'
-                                ? 'bg-amber-400/10 border-amber-400/40 text-amber-400 focus:ring-amber-400'
-                                : enq.status === 'contact_in_progress'
-                                ? 'bg-blue-500/10 border-blue-500/40 text-blue-400 focus:ring-blue-400'
-                                : 'bg-emerald-500/10 border-emerald-500/40 text-emerald-400 focus:ring-emerald-400'
-                            }`}
-                          >
-                            <option value="new" className="bg-slate-900 text-amber-400 font-bold">New Lead</option>
-                            <option value="contact_in_progress" className="bg-slate-900 text-blue-400 font-bold">In Progress</option>
-                            <option value="resolved" className="bg-slate-900 text-emerald-400 font-bold">Resolved</option>
-                          </select>
-                          <ChevronDown className={`w-3.5 h-3.5 absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none ${
-                            enq.status === 'new' ? 'text-amber-400' : enq.status === 'contact_in_progress' ? 'text-blue-400' : 'text-emerald-400'
-                          }`} />
-                        </div>
+                        <CustomSelect
+                          value={enq.status}
+                          onChange={(val) => handleEnquiryStatusChange(enq.id, val)}
+                          options={[
+                            { value: 'new', label: 'New Lead' },
+                            { value: 'contact_in_progress', label: 'In Progress' },
+                            { value: 'resolved', label: 'Resolved' },
+                          ]}
+                          variant="compact"
+                          className="w-36"
+                        />
                       </td>
                     </tr>
                   ))}
@@ -771,26 +763,17 @@ export default function Admin() {
                       <td className="p-3 text-slate-400">{u.email}</td>
                       <td className="p-3 text-slate-400">{u.phone || '—'}</td>
                       <td className="p-3">
-                        <div className="relative inline-block">
-                          <select
-                            value={u.role}
-                            onChange={(e) => handleRoleChange(u.id, e.target.value)}
-                            className={`appearance-none pl-3 pr-7 py-1.5 rounded-xl border text-xs font-extrabold uppercase cursor-pointer transition-colors focus:outline-none focus:ring-1 ${
-                              u.role === 'admin'
-                                ? 'bg-amber-400/10 border-amber-400/40 text-amber-400 focus:ring-amber-400'
-                                : u.role === 'agent'
-                                ? 'bg-purple-500/10 border-purple-500/40 text-purple-400 focus:ring-purple-400'
-                                : 'bg-blue-500/10 border-blue-500/40 text-blue-400 focus:ring-blue-400'
-                            }`}
-                          >
-                            <option value="user" className="bg-slate-900 text-blue-400 font-bold">USER</option>
-                            <option value="agent" className="bg-slate-900 text-purple-400 font-bold">AGENT</option>
-                            <option value="admin" className="bg-slate-900 text-amber-400 font-bold">ADMIN</option>
-                          </select>
-                          <ChevronDown className={`w-3.5 h-3.5 absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none ${
-                            u.role === 'admin' ? 'text-amber-400' : u.role === 'agent' ? 'text-purple-400' : 'text-blue-400'
-                          }`} />
-                        </div>
+                        <CustomSelect
+                          value={u.role}
+                          onChange={(val) => handleRoleChange(u.id, val)}
+                          options={[
+                            { value: 'user', label: 'USER' },
+                            { value: 'agent', label: 'AGENT' },
+                            { value: 'admin', label: 'ADMIN' },
+                          ]}
+                          variant="compact"
+                          className="w-32"
+                        />
                       </td>
                       <td className="p-3 text-right space-x-2">
                         <button
@@ -967,16 +950,16 @@ export default function Admin() {
 
               <div className="grid grid-cols-2 gap-3">
                 <div className="space-y-1">
-                  <label className="text-xs font-semibold text-slate-300">Account Role *</label>
-                  <select
+                  <CustomSelect
+                    label="Account Role *"
                     value={userForm.role}
-                    onChange={(e) => setUserForm({ ...userForm, role: e.target.value })}
-                    className="w-full px-3.5 py-2.5 rounded-xl bg-slate-950 border border-slate-800 text-amber-400 font-bold text-xs focus:outline-none focus:border-amber-400 cursor-pointer"
-                  >
-                    <option value="user">USER (Buyer / Renter)</option>
-                    <option value="agent">AGENT (Real Estate Agent)</option>
-                    <option value="admin">ADMIN (System Administrator)</option>
-                  </select>
+                    onChange={(val) => setUserForm({ ...userForm, role: val })}
+                    options={[
+                      { value: 'user', label: 'USER (Buyer / Renter)' },
+                      { value: 'agent', label: 'AGENT (Real Estate Agent)' },
+                      { value: 'admin', label: 'ADMIN (System Administrator)' },
+                    ]}
+                  />
                 </div>
 
                 <div className="space-y-1">

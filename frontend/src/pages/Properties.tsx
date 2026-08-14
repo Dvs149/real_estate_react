@@ -6,6 +6,14 @@ import PropertyCompare from '../components/PropertyCompare';
 import { getProperties, getLocations, getPropertyTypes, getAmenities } from '../services/api';
 import { Property, Location, PropertyType, Amenity } from '../types';
 import { LayoutGrid, List, SlidersHorizontal, Loader2 } from 'lucide-react';
+import CustomSelect, { SelectOption } from '../components/CustomSelect';
+
+const sortOptions: SelectOption[] = [
+  { value: 'newest', label: 'Sort By: Newest First' },
+  { value: 'price_asc', label: 'Price: Low to High' },
+  { value: 'price_desc', label: 'Price: High to Low' },
+  { value: 'popular', label: 'Most Viewed' },
+];
 
 export default function Properties() {
   const [searchParams] = useSearchParams();
@@ -119,16 +127,14 @@ export default function Properties() {
             Filters
           </button>
 
-          <select
+          <CustomSelect
             value={filters.sort}
-            onChange={(e) => setFilters((prev) => ({ ...prev, sort: e.target.value, page: '1' }))}
-            className="px-3.5 py-2.5 rounded-xl bg-slate-900 border border-slate-800 text-white text-xs font-semibold focus:outline-none focus:border-amber-400 cursor-pointer"
-          >
-            <option value="newest">Sort By: Newest First</option>
-            <option value="price_asc">Price: Low to High</option>
-            <option value="price_desc">Price: High to Low</option>
-            <option value="popular">Most Viewed</option>
-          </select>
+            onChange={(val) => setFilters((prev) => ({ ...prev, sort: val, page: '1' }))}
+            options={sortOptions}
+            placeholder="Sort By..."
+            variant="compact"
+            className="w-48 sm:w-56"
+          />
 
           <div className="hidden sm:flex items-center bg-slate-900 border border-slate-800 p-1 rounded-xl">
             <button
