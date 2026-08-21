@@ -358,6 +358,8 @@ export interface SiteSettings {
   site_email: string;
   site_working_hours: string;
   nav_menu_config?: string;
+  filter_sidebar_config?: string;
+  custom_amenities_config?: string;
 }
 
 export async function getSettings(): Promise<SiteSettings> {

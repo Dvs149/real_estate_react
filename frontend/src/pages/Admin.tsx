@@ -74,6 +74,7 @@ import {
   Activity,
   Globe,
   Menu,
+  SlidersHorizontal,
 } from 'lucide-react';
 
 export default function Admin() {
@@ -2410,6 +2411,233 @@ export default function Admin() {
                           </div>
                         );
                       });
+                    })()}
+                  </div>
+                </div>
+
+                {/* Property Filter Sidebar Controls (Hide / Show) */}
+                <div className="pt-6 border-t border-slate-800 space-y-4">
+                  <div>
+                    <h3 className="text-sm font-bold text-white flex items-center gap-2">
+                      <SlidersHorizontal className="w-4 h-4 text-amber-400" />
+                      Property Search Filter Sidebar Controls (Hide / Show)
+                    </h3>
+                    <p className="text-xs text-slate-400 mt-0.5">
+                      Toggle visibility for each filter section in the property listing sidebar (`/properties`).
+                    </p>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    {(() => {
+                      const defaultFilters = [
+                        { id: 'keyword', name: 'Keyword Search' },
+                        { id: 'purpose', name: 'Purpose (Buy / Rent)' },
+                        { id: 'location', name: 'City / Location' },
+                        { id: 'property_type', name: 'Property Type' },
+                        { id: 'price_range', name: 'Price Range' },
+                        { id: 'bedrooms', name: 'Bedrooms' },
+                        { id: 'furnishing', name: 'Furnishing' },
+                        { id: 'amenities', name: 'Amenities Checkboxes' },
+                      ];
+
+                      let parsedFilterConfig: any[] = [];
+                      if (siteSettings.filter_sidebar_config) {
+                        try {
+                          parsedFilterConfig = JSON.parse(siteSettings.filter_sidebar_config);
+                        } catch (e) {}
+                      }
+
+                      return defaultFilters.map((def) => {
+                        const match = parsedFilterConfig.find((p: any) => p.id === def.id || p.name === def.name);
+                        const isEnabled = match ? match.enabled !== false : true;
+
+                        return (
+                          <div
+                            key={def.id}
+                            className="flex items-center justify-between p-3 rounded-2xl bg-slate-950 border border-slate-800 hover:border-slate-700 transition-colors"
+                          >
+                            <div className="space-y-0.5">
+                              <p className="text-xs font-bold text-white">{def.name}</p>
+                              <p className="text-[10px] text-slate-500 font-mono">Filter ID: {def.id}</p>
+                            </div>
+
+                            <button
+                              type="button"
+                              onClick={() => {
+                                let updated: any[];
+                                if (parsedFilterConfig.length === 0) {
+                                  updated = defaultFilters.map((item) => ({
+                                    ...item,
+                                    enabled: item.id === def.id ? !isEnabled : true,
+                                  }));
+                                } else {
+                                  const exists = parsedFilterConfig.some((p: any) => p.id === def.id);
+                                  if (exists) {
+                                    updated = parsedFilterConfig.map((p: any) =>
+                                      p.id === def.id ? { ...p, enabled: !isEnabled } : p
+                                    );
+                                  } else {
+                                    updated = [...parsedFilterConfig, { ...def, enabled: !isEnabled }];
+                                  }
+                                }
+                                setSiteSettings({
+                                  ...siteSettings,
+                                  filter_sidebar_config: JSON.stringify(updated),
+                                });
+                              }}
+                              className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
+                                isEnabled
+                                  ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 shadow-sm shadow-emerald-500/10'
+                                  : 'bg-slate-800 text-slate-400 border border-slate-700'
+                              }`}
+                            >
+                              {isEnabled ? (
+                                <>
+                                  <Eye className="w-3.5 h-3.5" />
+                                  <span>VISIBLE</span>
+                                </>
+                              ) : (
+                                <>
+                                  <EyeOff className="w-3.5 h-3.5 text-slate-400" />
+                                  <span>HIDDEN</span>
+                                </>
+                              )}
+                            </button>
+                          </div>
+                        );
+                      });
+                    })()}
+                  </div>
+                </div>
+
+                {/* Dynamic Custom Amenities Options Manager */}
+                <div className="pt-6 border-t border-slate-800 space-y-4">
+                  <div>
+                    <h3 className="text-sm font-bold text-white flex items-center gap-2">
+                      <Plus className="w-4 h-4 text-amber-400" />
+                      Dynamic Custom Amenities Options
+                    </h3>
+                    <p className="text-xs text-slate-400 mt-0.5">
+                      Add and manage dynamic custom amenity checkboxes shown in the Filter Search sidebar.
+                    </p>
+                  </div>
+
+                  {/* Add New Custom Amenity Form */}
+                  <div className="flex gap-2">
+                    <input
+                      type="text"
+                      id="new_custom_amenity_name"
+                      placeholder="Enter new amenity (e.g. Private Helipad, EV Charging, Smart Home)"
+                      className="flex-1 px-4 py-2 rounded-xl bg-slate-950 border border-slate-800 text-white text-xs placeholder:text-slate-600 focus:outline-none focus:border-amber-400"
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') {
+                          e.preventDefault();
+                          const val = (e.target as HTMLInputElement).value.trim();
+                          if (!val) return;
+                          let current: any[] = [];
+                          if (siteSettings.custom_amenities_config) {
+                            try { current = JSON.parse(siteSettings.custom_amenities_config); } catch (err) {}
+                          }
+                          const slug = val.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
+                          const newItem = { id: slug, name: val, slug, enabled: true };
+                          setSiteSettings({
+                            ...siteSettings,
+                            custom_amenities_config: JSON.stringify([...current, newItem]),
+                          });
+                          (e.target as HTMLInputElement).value = '';
+                        }
+                      }}
+                    />
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const inputEl = document.getElementById('new_custom_amenity_name') as HTMLInputElement;
+                        if (!inputEl) return;
+                        const val = inputEl.value.trim();
+                        if (!val) return;
+                        let current: any[] = [];
+                        if (siteSettings.custom_amenities_config) {
+                          try { current = JSON.parse(siteSettings.custom_amenities_config); } catch (err) {}
+                        }
+                        const slug = val.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
+                        const newItem = { id: slug, name: val, slug, enabled: true };
+                        setSiteSettings({
+                          ...siteSettings,
+                          custom_amenities_config: JSON.stringify([...current, newItem]),
+                        });
+                        inputEl.value = '';
+                      }}
+                      className="px-4 py-2 rounded-xl bg-amber-400 text-slate-950 font-bold text-xs hover:bg-amber-300 transition-colors flex items-center gap-1 cursor-pointer shrink-0"
+                    >
+                      <Plus className="w-4 h-4" /> Add Option
+                    </button>
+                  </div>
+
+                  {/* List of Custom Amenities */}
+                  <div className="space-y-2 max-h-56 overflow-y-auto pr-1">
+                    {(() => {
+                      let customItems: any[] = [];
+                      if (siteSettings.custom_amenities_config) {
+                        try { customItems = JSON.parse(siteSettings.custom_amenities_config); } catch (e) {}
+                      }
+
+                      if (customItems.length === 0) {
+                        return (
+                          <p className="text-xs text-slate-500 italic p-3 rounded-xl bg-slate-950/60 border border-slate-800 text-center">
+                            No custom dynamic amenities added yet. Type a name above to add custom filter choices.
+                          </p>
+                        );
+                      }
+
+                      return customItems.map((item, idx) => (
+                        <div
+                          key={item.id || idx}
+                          className="flex items-center justify-between p-3 rounded-xl bg-slate-950 border border-slate-800 hover:border-slate-700 transition-colors"
+                        >
+                          <div>
+                            <span className="text-xs font-bold text-white block">{item.name}</span>
+                            <span className="text-[10px] text-slate-500 font-mono">slug: {item.slug}</span>
+                          </div>
+
+                          <div className="flex items-center gap-2">
+                            <button
+                              type="button"
+                              onClick={() => {
+                                const updated = customItems.map((c, i) =>
+                                  i === idx ? { ...c, enabled: c.enabled === false } : c
+                                );
+                                setSiteSettings({
+                                  ...siteSettings,
+                                  custom_amenities_config: JSON.stringify(updated),
+                                });
+                              }}
+                              className={`px-2.5 py-1 rounded-lg text-[11px] font-bold transition-all cursor-pointer flex items-center gap-1 ${
+                                item.enabled !== false
+                                  ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30'
+                                  : 'bg-slate-800 text-slate-400 border border-slate-700'
+                              }`}
+                            >
+                              {item.enabled !== false ? <Eye className="w-3 h-3" /> : <EyeOff className="w-3 h-3 text-slate-400" />}
+                              <span>{item.enabled !== false ? 'ACTIVE' : 'HIDDEN'}</span>
+                            </button>
+
+                            <button
+                              type="button"
+                              onClick={() => {
+                                const updated = customItems.filter((_, i) => i !== idx);
+                                setSiteSettings({
+                                  ...siteSettings,
+                                  custom_amenities_config: JSON.stringify(updated),
+                                });
+                              }}
+                              className="p-1.5 rounded-lg bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 border border-rose-500/30 transition-colors cursor-pointer"
+                              title="Delete amenity option"
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </button>
+                          </div>
+                        </div>
+                      ));
                     })()}
                   </div>
                 </div>

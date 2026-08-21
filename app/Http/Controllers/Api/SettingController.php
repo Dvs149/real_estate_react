@@ -23,12 +23,25 @@ class SettingController extends Controller
             ['id' => 'contact', 'name' => 'Contact', 'href' => '/contact', 'enabled' => true],
         ]);
 
+        $defaultFilter = json_encode([
+            ['id' => 'keyword', 'name' => 'Keyword Search', 'enabled' => true],
+            ['id' => 'purpose', 'name' => 'Purpose (Buy / Rent)', 'enabled' => true],
+            ['id' => 'location', 'name' => 'City / Location', 'enabled' => true],
+            ['id' => 'property_type', 'name' => 'Property Type', 'enabled' => true],
+            ['id' => 'price_range', 'name' => 'Price Range', 'enabled' => true],
+            ['id' => 'bedrooms', 'name' => 'Bedrooms', 'enabled' => true],
+            ['id' => 'furnishing', 'name' => 'Furnishing', 'enabled' => true],
+            ['id' => 'amenities', 'name' => 'Amenities Checkboxes', 'enabled' => true],
+        ]);
+
         $defaults = [
             'site_address' => 'Sindhu Bhavan Road, Bodakdev, Ahmedabad, Gujarat 380054',
             'site_phone' => '+91 98765 43210 / +91 79 4000 8888',
             'site_email' => 'divyesh@dvsrealty.com',
             'site_working_hours' => 'Mon - Sat: 9:00 AM - 8:00 PM IST',
             'nav_menu_config' => $defaultNav,
+            'filter_sidebar_config' => $defaultFilter,
+            'custom_amenities_config' => '[]',
         ];
 
         return response()->json(array_merge($defaults, $settings->toArray()));
@@ -42,6 +55,8 @@ class SettingController extends Controller
             'site_email' => 'nullable|string|email',
             'site_working_hours' => 'nullable|string',
             'nav_menu_config' => 'nullable|string',
+            'filter_sidebar_config' => 'nullable|string',
+            'custom_amenities_config' => 'nullable|string',
         ]);
 
         foreach ($validated as $key => $value) {
@@ -60,12 +75,25 @@ class SettingController extends Controller
             ['id' => 'contact', 'name' => 'Contact', 'href' => '/contact', 'enabled' => true],
         ]);
 
+        $defaultFilter = json_encode([
+            ['id' => 'keyword', 'name' => 'Keyword Search', 'enabled' => true],
+            ['id' => 'purpose', 'name' => 'Purpose (Buy / Rent)', 'enabled' => true],
+            ['id' => 'location', 'name' => 'City / Location', 'enabled' => true],
+            ['id' => 'property_type', 'name' => 'Property Type', 'enabled' => true],
+            ['id' => 'price_range', 'name' => 'Price Range', 'enabled' => true],
+            ['id' => 'bedrooms', 'name' => 'Bedrooms', 'enabled' => true],
+            ['id' => 'furnishing', 'name' => 'Furnishing', 'enabled' => true],
+            ['id' => 'amenities', 'name' => 'Amenities Checkboxes', 'enabled' => true],
+        ]);
+
         $defaults = [
             'site_address' => 'Sindhu Bhavan Road, Bodakdev, Ahmedabad, Gujarat 380054',
             'site_phone' => '+91 98765 43210 / +91 79 4000 8888',
             'site_email' => 'divyesh@dvsrealty.com',
             'site_working_hours' => 'Mon - Sat: 9:00 AM - 8:00 PM IST',
             'nav_menu_config' => $defaultNav,
+            'filter_sidebar_config' => $defaultFilter,
+            'custom_amenities_config' => '[]',
         ];
 
         return response()->json([

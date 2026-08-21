@@ -71,14 +71,27 @@ export default function Navbar() {
         width: activeEl.offsetWidth,
         ready: true,
       });
+    } else {
+      setPillStyle((prev) => ({ ...prev, ready: false }));
     }
   };
 
   useEffect(() => {
-    updatePillPosition();
+    const handle = requestAnimationFrame(() => {
+      updatePillPosition();
+    });
     window.addEventListener('resize', updatePillPosition);
-    return () => window.removeEventListener('resize', updatePillPosition);
-  }, [location.pathname, location.search]);
+    return () => {
+      cancelAnimationFrame(handle);
+      window.removeEventListener('resize', updatePillPosition);
+    };
+  }, [location.pathname, location.search, navItems, visibleNavLinks.length]);
+
+  useEffect(() => {
+    // Secondary microtask trigger after potential font / DOM layout renders
+    const timer = setTimeout(updatePillPosition, 50);
+    return () => clearTimeout(timer);
+  }, [navItems, visibleNavLinks.length]);
 
   useEffect(() => {
     const handleScroll = () => {
@@ -94,28 +107,17 @@ export default function Navbar() {
     navigate('/login');
   };
 
-  const navLinks = [
-    { name: 'Home', href: '/' },
-    { name: 'Buy', href: '/properties?purpose=buy' },
-    { name: 'Rent', href: '/properties?purpose=rent' },
-    { name: 'Properties', href: '/properties' },
-    { name: 'Agents', href: '/agents' },
-    { name: 'Blog', href: '/blog' },
-    { name: 'About', href: '/about' },
-    { name: 'Contact', href: '/contact' },
-  ];
-
-  const isLinkActive = (link: { name: string; href: string }) => {
+  const isLinkActive = (link: NavMenuItemConfig) => {
     const currentPath = location.pathname;
     const currentPurpose = searchParams.get('purpose');
 
-    if (link.name === 'Buy') {
+    if (link.id === 'buy' || link.name === 'Buy') {
       return currentPath === '/properties' && currentPurpose === 'buy';
     }
-    if (link.name === 'Rent') {
+    if (link.id === 'rent' || link.name === 'Rent') {
       return currentPath === '/properties' && currentPurpose === 'rent';
     }
-    if (link.name === 'Properties') {
+    if (link.id === 'properties' || link.name === 'Properties') {
       return currentPath === '/properties' && !currentPurpose;
     }
     if (link.href === '/') {
