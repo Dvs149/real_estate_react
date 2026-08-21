@@ -1,17 +1,20 @@
 import React, { useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
 import { getBlogs, getBlogCategories } from '../services/api';
 import { Blog as BlogType, BlogCategory } from '../types';
 import { Loader2, ArrowRight, Search } from 'lucide-react';
 import Pagination from '../components/Pagination';
 
 export default function Blog() {
+  const [searchParams, setSearchParams] = useSearchParams();
   const [blogs, setBlogs] = useState<BlogType[]>([]);
   const [categories, setCategories] = useState<BlogCategory[]>([]);
-  const [selectedCat, setSelectedCat] = useState<string>('');
-  const [search, setSearch] = useState<string>('');
+  const [selectedCat, setSelectedCat] = useState<string>(searchParams.get('category') || '');
+  const [search, setSearch] = useState<string>(searchParams.get('q') || '');
   const [loading, setLoading] = useState<boolean>(true);
-  const [currentPage, setCurrentPage] = useState<number>(1);
+
+  const pageParam = parseInt(searchParams.get('page') || '1', 10);
+  const currentPage = isNaN(pageParam) || pageParam < 1 ? 1 : pageParam;
   const itemsPerPage = 9;
 
   useEffect(() => {
@@ -52,14 +55,39 @@ export default function Blog() {
     currentPage * itemsPerPage
   );
 
+  const handlePageChange = (page: number) => {
+    const params = new URLSearchParams(searchParams);
+    if (page > 1) {
+      params.set('page', String(page));
+    } else {
+      params.delete('page');
+    }
+    setSearchParams(params);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
   const handleCatChange = (catSlugOrId: string) => {
     setSelectedCat(catSlugOrId);
-    setCurrentPage(1);
+    const params = new URLSearchParams(searchParams);
+    if (catSlugOrId) {
+      params.set('category', catSlugOrId);
+    } else {
+      params.delete('category');
+    }
+    params.delete('page');
+    setSearchParams(params);
   };
 
   const handleSearchChange = (q: string) => {
     setSearch(q);
-    setCurrentPage(1);
+    const params = new URLSearchParams(searchParams);
+    if (q.trim()) {
+      params.set('q', q);
+    } else {
+      params.delete('q');
+    }
+    params.delete('page');
+    setSearchParams(params);
   };
 
   return (
@@ -167,7 +195,7 @@ export default function Blog() {
           <Pagination
             currentPage={currentPage}
             totalPages={totalPages}
-            onPageChange={(page) => setCurrentPage(page)}
+            onPageChange={handlePageChange}
           />
         </>
       ) : (
@@ -177,7 +205,7 @@ export default function Blog() {
             onClick={() => {
               setSelectedCat('');
               setSearch('');
-              setCurrentPage(1);
+              setSearchParams({});
             }}
             className="px-4 py-2 rounded-xl bg-amber-400 text-slate-950 font-bold text-xs hover:bg-amber-300 cursor-pointer"
           >

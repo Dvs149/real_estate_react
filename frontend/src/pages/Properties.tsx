@@ -91,7 +91,19 @@ export default function Properties() {
     }
   };
 
+  const handlePageChange = (page: number) => {
+    const params = new URLSearchParams(searchParams);
+    if (page > 1) {
+      params.set('page', String(page));
+    } else {
+      params.delete('page');
+    }
+    setSearchParams(params);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
   const handleResetFilters = () => {
+    setSearchParams({});
     setFilters({
       q: '',
       purpose: '',
@@ -201,7 +213,7 @@ export default function Properties() {
             <Pagination
               currentPage={Number(filters.page) || 1}
               totalPages={meta.last_page}
-              onPageChange={(page) => setFilters((prev) => ({ ...prev, page: String(page) }))}
+              onPageChange={handlePageChange}
             />
           )}
         </div>

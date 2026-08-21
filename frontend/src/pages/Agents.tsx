@@ -1,15 +1,18 @@
 import React, { useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
 import { getAgents } from '../services/api';
 import { Agent } from '../types';
 import { Star, ArrowRight, Loader2, Search } from 'lucide-react';
 import Pagination from '../components/Pagination';
 
 export default function Agents() {
+  const [searchParams, setSearchParams] = useSearchParams();
   const [agents, setAgents] = useState<Agent[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
-  const [search, setSearch] = useState<string>('');
-  const [currentPage, setCurrentPage] = useState<number>(1);
+  const [search, setSearch] = useState<string>(searchParams.get('q') || '');
+  
+  const pageParam = parseInt(searchParams.get('page') || '1', 10);
+  const currentPage = isNaN(pageParam) || pageParam < 1 ? 1 : pageParam;
   const itemsPerPage = 9;
 
   useEffect(() => {
@@ -35,9 +38,27 @@ export default function Agents() {
     currentPage * itemsPerPage
   );
 
+  const handlePageChange = (page: number) => {
+    const params = new URLSearchParams(searchParams);
+    if (page > 1) {
+      params.set('page', String(page));
+    } else {
+      params.delete('page');
+    }
+    setSearchParams(params);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
   const handleSearchChange = (val: string) => {
     setSearch(val);
-    setCurrentPage(1);
+    const params = new URLSearchParams(searchParams);
+    if (val.trim()) {
+      params.set('q', val);
+    } else {
+      params.delete('q');
+    }
+    params.delete('page');
+    setSearchParams(params);
   };
 
   return (
@@ -109,7 +130,7 @@ export default function Agents() {
           <Pagination
             currentPage={currentPage}
             totalPages={totalPages}
-            onPageChange={(page) => setCurrentPage(page)}
+            onPageChange={handlePageChange}
           />
         </>
       ) : (
