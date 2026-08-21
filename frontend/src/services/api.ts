@@ -345,11 +345,19 @@ export async function deleteAdminUser(id: number): Promise<{ message: string }> 
   });
 }
 
+export interface NavMenuItemConfig {
+  id: string;
+  name: string;
+  href: string;
+  enabled: boolean;
+}
+
 export interface SiteSettings {
   site_address: string;
   site_phone: string;
   site_email: string;
   site_working_hours: string;
+  nav_menu_config?: string;
 }
 
 export async function getSettings(): Promise<SiteSettings> {

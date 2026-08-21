@@ -73,6 +73,7 @@ import {
   Check,
   Activity,
   Globe,
+  Menu,
 } from 'lucide-react';
 
 export default function Admin() {
@@ -2316,6 +2317,101 @@ export default function Admin() {
                     placeholder="Mon - Sat: 9:00 AM - 8:00 PM IST"
                     className="w-full px-4 py-2.5 rounded-xl bg-slate-950 border border-slate-800 text-white text-xs placeholder:text-slate-600 focus:outline-none focus:border-amber-400"
                   />
+                </div>
+
+                {/* Header Navigation Menu Toggle Controls */}
+                <div className="pt-6 border-t border-slate-800 space-y-4">
+                  <div>
+                    <h3 className="text-sm font-bold text-white flex items-center gap-2">
+                      <Menu className="w-4 h-4 text-amber-400" />
+                      Header Navigation Menu Controls (Hide / Show)
+                    </h3>
+                    <p className="text-xs text-slate-400 mt-0.5">
+                      Toggle visibility of navigation links in the public header menu across desktop & mobile.
+                    </p>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    {(() => {
+                      const defaultItems = [
+                        { id: 'home', name: 'Home', href: '/' },
+                        { id: 'buy', name: 'Buy', href: '/properties?purpose=buy' },
+                        { id: 'rent', name: 'Rent', href: '/properties?purpose=rent' },
+                        { id: 'properties', name: 'Properties', href: '/properties' },
+                        { id: 'agents', name: 'Agents', href: '/agents' },
+                        { id: 'blog', name: 'Blog', href: '/blog' },
+                        { id: 'about', name: 'About', href: '/about' },
+                        { id: 'contact', name: 'Contact', href: '/contact' },
+                      ];
+
+                      let parsedConfig: any[] = [];
+                      if (siteSettings.nav_menu_config) {
+                        try {
+                          parsedConfig = JSON.parse(siteSettings.nav_menu_config);
+                        } catch (e) {}
+                      }
+
+                      return defaultItems.map((def) => {
+                        const match = parsedConfig.find((p: any) => p.id === def.id || p.name === def.name);
+                        const isEnabled = match ? match.enabled !== false : true;
+
+                        return (
+                          <div
+                            key={def.id}
+                            className="flex items-center justify-between p-3 rounded-2xl bg-slate-950 border border-slate-800 hover:border-slate-700 transition-colors"
+                          >
+                            <div className="space-y-0.5">
+                              <p className="text-xs font-bold text-white">{def.name}</p>
+                              <p className="text-[10px] text-slate-500 font-mono">{def.href}</p>
+                            </div>
+
+                            <button
+                              type="button"
+                              onClick={() => {
+                                let updated: any[];
+                                if (parsedConfig.length === 0) {
+                                  updated = defaultItems.map((item) => ({
+                                    ...item,
+                                    enabled: item.id === def.id ? !isEnabled : true,
+                                  }));
+                                } else {
+                                  const exists = parsedConfig.some((p: any) => p.id === def.id);
+                                  if (exists) {
+                                    updated = parsedConfig.map((p: any) =>
+                                      p.id === def.id ? { ...p, enabled: !isEnabled } : p
+                                    );
+                                  } else {
+                                    updated = [...parsedConfig, { ...def, enabled: !isEnabled }];
+                                  }
+                                }
+                                setSiteSettings({
+                                  ...siteSettings,
+                                  nav_menu_config: JSON.stringify(updated),
+                                });
+                              }}
+                              className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
+                                isEnabled
+                                  ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 shadow-sm shadow-emerald-500/10'
+                                  : 'bg-slate-800 text-slate-400 border border-slate-700'
+                              }`}
+                            >
+                              {isEnabled ? (
+                                <>
+                                  <Eye className="w-3.5 h-3.5" />
+                                  <span>VISIBLE</span>
+                                </>
+                              ) : (
+                                <>
+                                  <EyeOff className="w-3.5 h-3.5 text-slate-400" />
+                                  <span>HIDDEN</span>
+                                </>
+                              )}
+                            </button>
+                          </div>
+                        );
+                      });
+                    })()}
+                  </div>
                 </div>
 
                 <div className="pt-4 border-t border-slate-800 flex justify-end">

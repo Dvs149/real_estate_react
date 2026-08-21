@@ -4,6 +4,19 @@ import { Building2, Heart, Menu, X, LogOut, LayoutDashboard, Shield, ChevronDown
 import { motion } from 'framer-motion';
 import { useAuth } from '../hooks/useAuth';
 
+import { getSettings, NavMenuItemConfig } from '../services/api';
+
+const defaultNavLinks: NavMenuItemConfig[] = [
+  { id: 'home', name: 'Home', href: '/', enabled: true },
+  { id: 'buy', name: 'Buy', href: '/properties?purpose=buy', enabled: true },
+  { id: 'rent', name: 'Rent', href: '/properties?purpose=rent', enabled: true },
+  { id: 'properties', name: 'Properties', href: '/properties', enabled: true },
+  { id: 'agents', name: 'Agents', href: '/agents', enabled: true },
+  { id: 'blog', name: 'Blog', href: '/blog', enabled: true },
+  { id: 'about', name: 'About', href: '/about', enabled: true },
+  { id: 'contact', name: 'Contact', href: '/contact', enabled: true },
+];
+
 export default function Navbar() {
   const location = useLocation();
   const navigate = useNavigate();
@@ -13,6 +26,7 @@ export default function Navbar() {
   const [scrolled, setScrolled] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [userDropdownOpen, setUserDropdownOpen] = useState(false);
+  const [navItems, setNavItems] = useState<NavMenuItemConfig[]>(defaultNavLinks);
 
   const navRef = useRef<HTMLElement>(null);
   const [pillStyle, setPillStyle] = useState<{ left: number; width: number; ready: boolean }>({
@@ -20,6 +34,33 @@ export default function Navbar() {
     width: 0,
     ready: false,
   });
+
+  useEffect(() => {
+    getSettings()
+      .then((res) => {
+        if (res && res.nav_menu_config) {
+          try {
+            const parsed = JSON.parse(res.nav_menu_config);
+            if (Array.isArray(parsed) && parsed.length > 0) setNavItems(parsed);
+          } catch (e) {}
+        }
+      })
+      .catch(() => {});
+
+    const handleSettingsUpdate = (e: any) => {
+      if (e.detail && e.detail.nav_menu_config) {
+        try {
+          const parsed = JSON.parse(e.detail.nav_menu_config);
+          if (Array.isArray(parsed) && parsed.length > 0) setNavItems(parsed);
+        } catch (err) {}
+      }
+    };
+
+    window.addEventListener('siteSettingsUpdated', handleSettingsUpdate);
+    return () => window.removeEventListener('siteSettingsUpdated', handleSettingsUpdate);
+  }, []);
+
+  const visibleNavLinks = navItems.filter((item) => item.enabled !== false);
 
   const updatePillPosition = () => {
     if (!navRef.current) return;
@@ -124,7 +165,7 @@ export default function Navbar() {
             />
           )}
 
-          {navLinks.map((link) => {
+          {visibleNavLinks.map((link) => {
             const active = isLinkActive(link);
             return (
               <Link
@@ -247,7 +288,7 @@ export default function Navbar() {
       {mobileMenuOpen && (
         <div className="md:hidden bg-slate-950/95 backdrop-blur-xl border-b border-slate-800 px-4 py-5 space-y-3 mt-2 shadow-2xl animate-in slide-in-from-top">
           <div className="space-y-1">
-            {navLinks.map((link) => (
+            {visibleNavLinks.map((link) => (
               <Link
                 key={link.name}
                 to={link.href}
